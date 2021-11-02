@@ -1,0 +1,9 @@
+<library path="lib/libpuma01_control">
+
+  <class name="puma01_controllers/ComputedTorqueController" type="puma01_controllers::ComputedTorqueController" base_class_type="controller_interface::ControllerBase">
+    <description>
+      The ComputedTorqueController inherits from JointGroupPositionController, and it tracks position commands. It expects a EffortJointInterface type of hardware interface.
+    </description>
+  </class>
+
+</library>
