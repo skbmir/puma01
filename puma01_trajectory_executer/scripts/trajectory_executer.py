@@ -11,7 +11,7 @@ class MoveItPlannedTrajectoryExecuter(object):
 	def __init__(self, name):
 	
 	# set the topic to send trajectory commands to
-		self.cmd_pub = rospy.Publisher('/puma01/computed_torque_controller/command',Float64MultiArray, queue_size=1)
+		self.cmd_pub = rospy.Publisher('/puma01_sim/computed_torque_controller/command',Float64MultiArray, queue_size=1)
 		
 		rospy.Subscriber("/move_group/display_planned_path", DisplayTrajectory, self.planned_trajectory_receive)
 

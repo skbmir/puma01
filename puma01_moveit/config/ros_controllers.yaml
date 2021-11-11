@@ -4,8 +4,8 @@ moveit_sim_hw_interface:
   joint_model_group_pose: home
 # Settings for ros_control_boilerplate control loop
 generic_hw_control_loop:
-  loop_hz: 300
-  cycle_time_error_threshold: 0.01
+  loop_hz: 200
+  cycle_time_error_threshold: 0.1
 # Settings for ros_control hardware interface
 hardware_interface:
   joints:
@@ -15,7 +15,7 @@ hardware_interface:
     - joint_4
     - joint_5
     - joint_6
-    - joint_6_T
+
   sim_control_mode: 1  # 0: position, 1: velocity
 
 puma01:
@@ -89,7 +89,7 @@ puma01:
 
 # for MoveIt ----------------------------------------------------------
 controller_list:
-- name: puma01/trajectory_controller
+- name: puma01/posvelacc_trajectory_controller
   action_ns: follow_joint_trajectory
   type: FollowJointTrajectory
   default: true

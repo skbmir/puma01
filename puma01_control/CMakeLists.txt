@@ -16,15 +16,15 @@ find_package(catkin REQUIRED COMPONENTS
 )
 
 catkin_package(
-  CATKIN_DEPENDS
-    control_msgs
-    control_toolbox
-    controller_interface
-    forward_command_controller
-    hardware_interface
-    realtime_tools
-    std_msgs
-    urdf
+  # CATKIN_DEPENDS
+  #   control_msgs
+  #   control_toolbox
+  #   controller_interface
+  #   forward_command_controller
+  #   hardware_interface
+  #   realtime_tools
+  #   std_msgs
+  #   urdf
   LIBRARIES
     ${PROJECT_NAME}
   INCLUDE_DIRS
@@ -40,7 +40,6 @@ add_library(${PROJECT_NAME}
 target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES})
 
 add_executable(computed_torque src/computed_torque.cpp)
-
 target_link_libraries(computed_torque ${catkin_LIBRARIES})
 
 install(DIRECTORY include/${PROJECT_NAME}/

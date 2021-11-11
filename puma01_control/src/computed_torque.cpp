@@ -207,24 +207,24 @@ class PUMA_Controller
 
 		time_last= ros::Time::now().toSec();
 
-		joint_states_q_sub = n.subscribe("/puma01/joint_states",1,&PUMA_Controller::JointStatesObserve,this);
-		cmd_sub = n.subscribe("/puma01/cmd_trajectory_point",1,&PUMA_Controller::CommandReceive,this);
+		joint_states_q_sub = n.subscribe("/puma01_sim/joint_states",1,&PUMA_Controller::JointStatesObserve,this);
+		cmd_sub = n.subscribe("/puma01_sim/cmd_trajectory_point",1,&PUMA_Controller::CommandReceive,this);
 
-		joint_1_pub_ = n.advertise<std_msgs::Float64>("/puma01/joint_1_effort_controller/command",1);
-		joint_2_pub_ = n.advertise<std_msgs::Float64>("/puma01/joint_2_effort_controller/command",1);
-		joint_3_pub_ = n.advertise<std_msgs::Float64>("/puma01/joint_3_effort_controller/command",1);
-		joint_4_pub_ = n.advertise<std_msgs::Float64>("/puma01/joint_4_effort_controller/command",1);
-		joint_5_pub_ = n.advertise<std_msgs::Float64>("/puma01/joint_5_effort_controller/command",1);
-		joint_6_pub_ = n.advertise<std_msgs::Float64>("/puma01/joint_6_effort_controller/command",1);
+		joint_1_pub_ = n.advertise<std_msgs::Float64>("/puma01_sim/joint_1_effort_controller/command",1);
+		joint_2_pub_ = n.advertise<std_msgs::Float64>("/puma01_sim/joint_2_effort_controller/command",1);
+		joint_3_pub_ = n.advertise<std_msgs::Float64>("/puma01_sim/joint_3_effort_controller/command",1);
+		joint_4_pub_ = n.advertise<std_msgs::Float64>("/puma01_sim/joint_4_effort_controller/command",1);
+		joint_5_pub_ = n.advertise<std_msgs::Float64>("/puma01_sim/joint_5_effort_controller/command",1);
+		joint_6_pub_ = n.advertise<std_msgs::Float64>("/puma01_sim/joint_6_effort_controller/command",1);
 
 		info.data.resize(3);
-		info_pub_ = n.advertise<std_msgs::Float64MultiArray>("/puma01/info",1);
+		info_pub_ = n.advertise<std_msgs::Float64MultiArray>("/puma01_sim/info",1);
 
 		unsigned int i_p_1 = 0;
 		for(unsigned int i=0; i<n_joints; i++)
 		{
 			i_p_1 = i+1;
-			if (!pid_controllers[i].init(ros::NodeHandle(n, std::string("/puma01/joint_") + std::to_string(i_p_1) + std::string("_effort_controller/pid")))) 
+			if (!pid_controllers[i].init(ros::NodeHandle(n, std::string("/puma01_sim/joint_") + std::to_string(i_p_1) + std::string("_effort_controller/pid")))) 
 			{  
 				ROS_ERROR_STREAM("Failed to load PID parameters!");
 			}else{

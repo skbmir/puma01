@@ -1,12 +1,12 @@
- puma01:
+ puma01_sim:
   # Publish all joint states ------------------------------------------
-  joint_state_controller:
+  sim_joint_state_controller:
     type: joint_state_controller/JointStateController
     publish_rate: 200
 
 # Trajectory controller -----------------------------------------------
 
-  trajectory_controller:
+  sim_trajectory_controller:
     type: "effort_controllers/JointTrajectoryController"
 
     joints:
@@ -69,7 +69,7 @@
 
   # Computed torque controller -------------------------------
 
-  computed_torque_controller:
+  sim_computed_torque_controller:
     type: "puma01_controllers/ComputedTorqueController"
     joints:
       - joint_1

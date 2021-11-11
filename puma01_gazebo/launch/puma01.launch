@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <launch>
     <!-- loading URDF to Parameter server-->
-    <param name="robot_description" textfile="$(find puma01_description)/urdf/puma01.urdf" />
+    <param name="robot_description" textfile="$(find puma01_description)/urdf/puma01_sim.urdf" />
     <arg name="x" default="0"/>
     <arg name="y" default="0"/>
     <arg name="z" default="0"/> 

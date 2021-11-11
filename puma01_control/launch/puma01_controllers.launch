@@ -5,16 +5,19 @@
     <rosparam command="load" file="$(find puma01_control)/config/puma01_controllers_config.yaml" />
 
     <!-- launching controller_manager, which starts the controllers, named in args -->
-    <node name="controller_spawner" pkg="controller_manager" type="spawner"
-      respawn="false" output="screen" ns="/puma01" 
-      args="--namespace=/puma01
-      computed_torque_controller
-      joint_state_controller
+    <node name="sim_controller_spawner" pkg="controller_manager" type="spawner"
+      respawn="false" output="screen" ns="/puma01_sim" 
+      args="--namespace=/puma01_sim
+      sim_computed_torque_controller
+      sim_joint_state_controller
       --timeout 60">
     </node>  
 
     <!-- launching custom simple node-topic-based controller for effort command joint hw interface based robot -->
     <!-- <node name="computed_torque_controller" pkg="puma01" type="computed_torque"/>  -->
+
+
+<!-- trajectory_controller -->
 
     <!-- list of effort command controllers to launch in case of using simple node-topic-based controller -->
       <!-- joint_1_effort_controller
