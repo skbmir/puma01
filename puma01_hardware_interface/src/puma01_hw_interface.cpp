@@ -40,8 +40,9 @@ void puma01HWInterface::init()
   num_joints_ = joint_names_.size();
 
   // resize sim cmd vector
-  traj_cmd_.data.resize(num_joints_*3, 0.0);
-
+  traj_cmd_full_size = num_joints_*3;
+  traj_cmd_acc_num = num_joints_*2;
+  traj_cmd_.data.resize(traj_cmd_full_size, 0.0);
 
   // Status
   joint_position_.resize(num_joints_, 0.0);
@@ -58,7 +59,6 @@ void puma01HWInterface::init()
   joint_position_lower_limits_.resize(num_joints_, 0.0);
   joint_position_upper_limits_.resize(num_joints_, 0.0);
   joint_velocity_limits_.resize(num_joints_, 0.0);
-  // joint_acceleration_limits_.resize(num_joints_, 0.0);  //???????????????????????????????????????????????????????
   joint_effort_limits_.resize(num_joints_, 0.0);
 
   // Initialize interfaces for each joint
@@ -80,7 +80,7 @@ void puma01HWInterface::init()
     posvelacc_joint_interface_.registerHandle(joint_handle_posvelacc);
 
     // Load the joint limits
-  //  registerJointLimits(joint_handle_position, joint_handle_velocity, joint_handle_effort, joint_id); //**************************
+    // registerJointLimits(joint_handle_position, joint_handle_velocity, joint_handle_effort, joint_id); 
 
   }  // end for each joint
 
@@ -121,11 +121,11 @@ void puma01HWInterface::write(ros::Duration& elapsed_time)
   // Safety
   // enforceLimits(elapsed_time);
 
-  for(size_t i=0; i<num_joints_; i++)
+  for(unsigned int i=0; i<num_joints_; i++)
   {
-    traj_cmd_.data[i] = (float)joint_position_command_[i];
-    traj_cmd_.data[i+num_joints_] = (float)joint_velocity_command_[i+num_joints_];
-    traj_cmd_.data[i+num_joints_*2] = (float)joint_acceleration_command_[i+num_joints_*2];
+    traj_cmd_.data[i] =(float)joint_position_command_[i];
+    traj_cmd_.data[i+num_joints_] = (float)joint_velocity_command_[i];
+    traj_cmd_.data[i+traj_cmd_acc_num] = (float)joint_acceleration_command_[i];
   }
 
   sim_cmd_pub_.publish(traj_cmd_);

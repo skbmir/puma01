@@ -317,6 +317,7 @@
 <!-- ROS CONTROL -->   
   <gazebo>
     <plugin name="gazebo_ros_control" filename="libgazebo_ros_control.so">
+    <!-- namespace for simulation -->
     <robotNamespace>/puma01_sim</robotNamespace>
     <legacyModeNS>true</legacyModeNS>
     <robotBaseFrame>link0</robotBaseFrame>
@@ -392,7 +393,7 @@
   <gazebo>
     <plugin name="joint_6_T_ft_sensor" filename="libgazebo_ros_ft_sensor.so">
       <updateRate>80</updateRate>
-      <topicName>/puma01_sim/wrench</topicName> 
+      <topicName>/puma01_sim/ft_sensor</topicName> 
       <jointName>joint_6_T</jointName>
       <force_torque>
         <frame>child</frame>

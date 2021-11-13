@@ -39,6 +39,8 @@ protected:
 
 	ros::Publisher sim_cmd_pub_;
 
+  unsigned int traj_cmd_full_size, traj_cmd_acc_num;
+
   std_msgs::Float64MultiArray traj_cmd_;
 
 };  // class

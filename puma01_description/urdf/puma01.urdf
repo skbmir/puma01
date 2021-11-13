@@ -284,7 +284,7 @@
     <child link="link4"/>
     <axis xyz="0.0 0.0 1.0"/>
     <dynamics damping="0.5" friction="0.0"/>
-    <limit effort="10.0" velocity="5.0" lower="-1.92" upper="2.97" />
+    <limit effort="50.0" velocity="5.0" lower="-1.92" upper="2.97" />
   </joint>
   
   <joint name="joint_5" type="revolute">
@@ -293,7 +293,7 @@
     <child link="link5"/>
     <axis xyz="0.0 0.0 1.0"/>
     <dynamics damping="0.5" friction="0.0"/>
-    <limit effort="10.0" velocity="5.0" lower="-1.74" upper="1.74" />
+    <limit effort="50.0" velocity="5.0" lower="-1.74" upper="1.74" />
   </joint>
   
   <joint name="joint_6" type="revolute">
@@ -302,7 +302,7 @@
     <child link="link6"/>
     <axis xyz="0.0 0.0 1.0"/>
     <dynamics damping="0.5" friction="0.0"/>
-    <limit effort="10.0" velocity="5.0" lower="-4.64" upper="4.64" />
+    <limit effort="50.0" velocity="5.0" lower="-4.64" upper="4.64" />
   </joint>
 
   <joint name="joint_6_T" type="revolute">
@@ -317,7 +317,8 @@
 <!-- ROS CONTROL -->   
   <gazebo>
     <plugin name="gazebo_ros_control" filename="libgazebo_ros_control.so">
-    <robotNamespace>/puma01</robotNamespace>
+    <!-- this namespace is not for simulation! -->
+    <robotNamespace>/puma01</robotNamespace> 
     <legacyModeNS>true</legacyModeNS>
     <robotBaseFrame>link0</robotBaseFrame>
     </plugin>
@@ -387,12 +388,12 @@
 <!-- FORCE/TORQUE SENSOR -->     
   <gazebo reference="joint_6_T">
     <provideFeedback>true</provideFeedback>
-  </gazebo> 
+  </gazebo>
       
   <gazebo>
     <plugin name="joint_6_T_ft_sensor" filename="libgazebo_ros_ft_sensor.so">
       <updateRate>80</updateRate>
-      <topicName>/puma01_sim/wrench</topicName> 
+      <topicName>/puma01_sim/ft_sensor</topicName> 
       <jointName>joint_6_T</jointName>
       <force_torque>
         <frame>child</frame>

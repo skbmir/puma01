@@ -230,27 +230,30 @@ namespace puma01_controllers
 		{
 			q_desired[i] = (double)msg->data[i];    
 			dq_desired[i] = (double)msg->data[i+n_joints_]; 		
-			ddq_desired[i] = (double)msg->data[i+2*n_joints_]; 							
+			ddq_desired[i] = (double)msg->data[i+2*n_joints_]; 		
+
+      enforceJointLimits(q_desired[i],i);
+
 		}
     // commands_buffer_.writeFromNonRT(msg->data);
   }
 
 // enforceJointLimits
-  // void ComputedTorqueController::enforceJointLimits(double &command, unsigned int index)
-  // {
-  //   // Check that this joint has applicable limits
-  //   if (joint_urdfs_[index]->type == urdf::Joint::REVOLUTE || joint_urdfs_[index]->type == urdf::Joint::PRISMATIC)
-  //   {
-  //     if( command > joint_urdfs_[index]->limits->upper ) // above upper limnit
-  //     {
-  //       command = joint_urdfs_[index]->limits->upper;
-  //     }
-  //     else if( command < joint_urdfs_[index]->limits->lower ) // below lower limit
-  //     {
-  //       command = joint_urdfs_[index]->limits->lower;
-  //     }
-  //   }
-  // }
+  void ComputedTorqueController::enforceJointLimits(double &command, unsigned int index)
+  {
+    // Check that this joint has applicable limits
+    if (joint_urdfs_[index]->type == urdf::Joint::REVOLUTE || joint_urdfs_[index]->type == urdf::Joint::PRISMATIC)
+    {
+      if( command > joint_urdfs_[index]->limits->upper ) // above upper limnit
+      {
+        command = joint_urdfs_[index]->limits->upper;
+      }
+      else if( command < joint_urdfs_[index]->limits->lower ) // below lower limit
+      {
+        command = joint_urdfs_[index]->limits->lower;
+      }
+    }
+  }
 
 
 } //namespace
