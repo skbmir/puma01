@@ -30,17 +30,11 @@ protected:
   // Name of this class
   std::string name_;
 
-  // ************************************************************************************************************
   std::vector<double> joint_acceleration_command_;
-
   hardware_interface::PosVelAccJointInterface posvelacc_joint_interface_;
-
   ros::Subscriber sim_joint_states_sub_; 
-
 	ros::Publisher sim_cmd_pub_;
-
-  unsigned int traj_cmd_full_size, traj_cmd_acc_num;
-
+  unsigned int traj_cmd_full_size_, traj_cmd_acc_num_;
   std_msgs::Float64MultiArray traj_cmd_;
 
 };  // class

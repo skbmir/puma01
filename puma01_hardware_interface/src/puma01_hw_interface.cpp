@@ -40,9 +40,9 @@ void puma01HWInterface::init()
   num_joints_ = joint_names_.size();
 
   // resize sim cmd vector
-  traj_cmd_full_size = num_joints_*3;
-  traj_cmd_acc_num = num_joints_*2;
-  traj_cmd_.data.resize(traj_cmd_full_size, 0.0);
+  traj_cmd_full_size_ = num_joints_*3;
+  traj_cmd_acc_num_ = num_joints_*2;
+  traj_cmd_.data.resize(traj_cmd_full_size_, 0.0);
 
   // Status
   joint_position_.resize(num_joints_, 0.0);
@@ -87,10 +87,7 @@ void puma01HWInterface::init()
   registerInterface(&joint_state_interface_);     // From RobotHW base class.
   registerInterface(&posvelacc_joint_interface_);    // From RobotHW base class.
 
-  // Resize vectors
-//   joint_position_prev_.resize(num_joints_, 0.0);  // ???????????????????????????????????????????????????????
-
-  ROS_INFO_NAMED(name_, "puma01HWInterface Ready.");
+  ROS_INFO_NAMED(name_, "puma01 hardware interface Ready!");
 }
 
 void puma01HWInterface::SimJointStatesCB(const sensor_msgs::JointState::ConstPtr& msg)
@@ -125,7 +122,7 @@ void puma01HWInterface::write(ros::Duration& elapsed_time)
   {
     traj_cmd_.data[i] =(float)joint_position_command_[i];
     traj_cmd_.data[i+num_joints_] = (float)joint_velocity_command_[i];
-    traj_cmd_.data[i+traj_cmd_acc_num] = (float)joint_acceleration_command_[i];
+    traj_cmd_.data[i+traj_cmd_acc_num_] = (float)joint_acceleration_command_[i];
   }
 
   sim_cmd_pub_.publish(traj_cmd_);
