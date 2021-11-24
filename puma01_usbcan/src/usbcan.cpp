@@ -70,8 +70,31 @@ bool  VSCAN_serial_handler::readRequest()
     if((vscan_status_!=VSCAN_ERR_OK) || !actual_read_frame_number_) 
     {
         return false;
+    }else{
+        return true;
     }
-    return true;
+}
+
+bool  VSCAN_serial_handler::writeRequest()
+{
+    vscan_status_ = VSCAN_Write(vscan_handle_, &write_buffer, sizeof(write_buffer), &actual_write_frame_number_);
+
+    if((vscan_status_!=VSCAN_ERR_OK)) 
+    {
+        return false;
+    }else{
+        return true;
+    }
+}
+
+bool  VSCAN_serial_handler::Flush()
+{
+    if(VSCAN_Flush(vscan_handle_)!=VSCAN_ERR_OK) 
+    {
+        return false;
+    }else{
+        return true;
+    }
 }
 
 
