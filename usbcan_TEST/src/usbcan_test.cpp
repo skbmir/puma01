@@ -5,6 +5,8 @@ int main(int argc, char** argv)
 {
     std::string n_name = "usbcan_test";
 
+    char tty[] = "/dev/ttyUSB0";
+
     ros::init(argc, argv, n_name);
     ros::NodeHandle nh;
 
@@ -13,7 +15,7 @@ int main(int argc, char** argv)
 
 // open CAN port
     ROS_INFO_NAMED(n_name, "Connecting to USB-CAN adapter and opening port...");
-    if(!usbcan_handler.open("/dev/ttyUSB0",VSCAN_MODE_NORMAL,VSCAN_SPEED_1M))
+    if(!usbcan_handler.open(tty,VSCAN_MODE_NORMAL,VSCAN_SPEED_1M))
     {
         ROS_ERROR_STREAM_NAMED(n_name, "Failed to connect to USB-CAN adapter and open port! Status: " << usbcan_handler.getStatusString() << std::endl);
     }else{

@@ -16,7 +16,7 @@ public:
     VSCAN_serial_handler(); 
     ~VSCAN_serial_handler();
 
-    bool open(CHAR *device, DWORD mode, void * speed);
+    bool open(CHAR * device, DWORD mode, void * speed);
     void close();
 
     void setSpeed(void * speed);
