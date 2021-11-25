@@ -1,7 +1,7 @@
 #include <ros/ros.h>
 #include <puma01_usbcan/usbcan.h>
 
-void main(int argc, char** argv)
+int main(int argc, char** argv)
 {
     std::string n_name = "usbcan_test";
 
@@ -13,7 +13,7 @@ void main(int argc, char** argv)
 
 // open CAN port
     ROS_INFO_NAMED(n_name, "Connecting to USB-CAN adapter and opening port...");
-    if(!usbcan_handler.open())
+    if(!usbcan_handler.open("/dev/ttyUSB0",VSCAN_MODE_NORMAL,VSCAN_SPEED_1M))
     {
         ROS_ERROR_STREAM_NAMED(n_name, "Failed to connect to USB-CAN adapter and open port! Status: " << usbcan_handler.getStatusString() << std::endl);
     }else{
@@ -57,4 +57,6 @@ void main(int argc, char** argv)
         rate.sleep();
     }
 
+
+    return 0;
 }

@@ -24,7 +24,7 @@ VSCAN_serial_handler::~VSCAN_serial_handler()
     // delete write_buffer_; 
 }
 
-bool VSCAN_serial_handler::open(CHAR * device = "/dev/ttyUSB0", DWORD mode = VSCAN_MODE_NORMAL, void * speed = VSCAN_SPEED_1M)
+bool VSCAN_serial_handler::open(CHAR * device, DWORD mode = VSCAN_MODE_NORMAL, void * speed = VSCAN_SPEED_1M)
 {
     vscan_handle_ = VSCAN_Open(device, mode);   
     if(vscan_handle_>0)
@@ -44,17 +44,23 @@ void VSCAN_serial_handler::close()
 
 bool VSCAN_serial_handler::isReady()
 {
-    switch(vscan_status_)
-    {
-    case VSCAN_ERR_NO_DEVICE_FOUND:
-        return false;
 
-    case VSCAN_ERR_INVALID_HANDLE:
+    if(vscan_status_==VSCAN_ERR_NO_DEVICE_FOUND || vscan_status_==VSCAN_ERR_INVALID_HANDLE){
         return false;
-
-    default:
+    }else{
         return true;
     }
+
+// got "... is not constant expression" error
+    // switch(vscan_status_)
+    // {
+    // case VSCAN_ERR_NO_DEVICE_FOUND:
+    //     return false;
+    // case VSCAN_ERR_INVALID_HANDLE:
+    //     return false;
+    // default:
+    //     return true;
+    // }
 }
 
 char * VSCAN_serial_handler::getStatusString()

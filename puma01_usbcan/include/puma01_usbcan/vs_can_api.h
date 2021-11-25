@@ -24,6 +24,8 @@ typedef unsigned short USHORT;
 typedef unsigned long ULONG;
 #endif
 
+#include <stdint.h> // for intptr_t
+
 #ifndef UINT8
 #define UINT8	UCHAR
 #endif
@@ -104,9 +106,9 @@ typedef struct
 #define VSCAN_DEBUG_MODE_FILE			(void*)2
 // Debug Level
 #define VSCAN_DEBUG_NONE				(void*)0
-#define VSCAN_DEBUG_LOW					(void*)-1
-#define VSCAN_DEBUG_MID					(void*)-51
-#define VSCAN_DEBUG_HIGH				(void*)-101
+#define VSCAN_DEBUG_LOW					(intptr_t)(void*)-1		// for functioning in 64-bit systems
+#define VSCAN_DEBUG_MID					(intptr_t)(void*)-51	// for functioning in 64-bit systems
+#define VSCAN_DEBUG_HIGH				(intptr_t)(void*)-101	// for functioning in 64-bit systems
 
 // Status / Errors
 #define VSCAN_ERR_OK					0
