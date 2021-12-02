@@ -14,8 +14,8 @@ int main(int argc, char** argv)
     puma01_usbcan::VSCAN_serial_handler usbcan_handler; 
 
 // open CAN port
-    ROS_INFO_NAMED(n_name, "Connecting to USB-CAN adapter and opening port...");
-    if(!usbcan_handler.open(tty,VSCAN_MODE_NORMAL,VSCAN_SPEED_1M))
+    ROS_INFO_STREAM_NAMED(n_name, "Connecting to USB-CAN adapter and opening port...");
+    if(!usbcan_handler.open(VSCAN_FIRST_FOUND,VSCAN_MODE_NORMAL,VSCAN_SPEED_1M))
     {
         ROS_ERROR_STREAM_NAMED(n_name, "Failed to connect to USB-CAN adapter and open port! Status: " << usbcan_handler.getStatusString() << std::endl);
     }else{
@@ -31,30 +31,30 @@ int main(int argc, char** argv)
     usbcan_handler.write_buffer.Data[2] = 0x02;
     usbcan_handler.write_buffer.Data[3] = 0x03;
 
-    ros::Rate rate(1);
+    ros::Rate rate(0.5);
 
     while (ros::ok())
     {
 // write
 
 
-        if(usbcan_handler.writeRequest())
-        {
-            if(usbcan_handler.Flush())
-            {
-                ROS_INFO_STREAM_NAMED(n_name, "Wrote CAN-frames!"<< std::endl);
-            }
-        }else{
-            ROS_ERROR_STREAM_NAMED(n_name, "Failed to WRITE data to USB-CAN adapter. Status: " << usbcan_handler.getStatusString() << std::endl);
-        }
+//         if(usbcan_handler.writeRequest())
+//         {
+//             if(usbcan_handler.Flush())
+//             {
+//                 ROS_INFO_STREAM_NAMED(n_name, "Wrote CAN-frames!"<< std::endl);
+//             }
+//         }else{
+//             ROS_ERROR_STREAM_NAMED(n_name, "Failed to WRITE data to USB-CAN adapter. Status: " << usbcan_handler.getStatusString() << std::endl);
+//         }
 
-// read
-        if(usbcan_handler.readRequest())
-        {
-            ROS_INFO_STREAM_NAMED(n_name, "Got CAN-frame with ID: " << usbcan_handler.read_buffer.Data << std::endl);
-        }else{
-            ROS_ERROR_STREAM_NAMED(n_name, "Failed to READ data from USB-CAN adapter. Status: " << usbcan_handler.getStatusString() << std::endl);
-        }
+// // read
+//         if(usbcan_handler.readRequest())
+//         {
+//             ROS_INFO_STREAM_NAMED(n_name, "Got CAN-frame with ID: " << usbcan_handler.read_buffer.Data << std::endl);
+//         }else{
+//             ROS_ERROR_STREAM_NAMED(n_name, "Failed to READ data from USB-CAN adapter. Status: " << usbcan_handler.getStatusString() << std::endl);
+//         }
 
         rate.sleep();
     }

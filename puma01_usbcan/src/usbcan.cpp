@@ -24,7 +24,7 @@ VSCAN_serial_handler::~VSCAN_serial_handler()
     // delete write_buffer_; 
 }
 
-bool VSCAN_serial_handler::open(CHAR * device, DWORD mode = VSCAN_MODE_NORMAL, void * speed = VSCAN_SPEED_1M)
+bool VSCAN_serial_handler::open(CHAR * device, DWORD mode, void * speed)
 {
     vscan_handle_ = VSCAN_Open(device, mode);   
     if(vscan_handle_>0)
