@@ -23,6 +23,7 @@ include_directories(
   ${catkin_INCLUDE_DIRS}
 )
 
+# MAYBE NEED TO TRY DIFFERENT APPROACHES FOR LINKING VS_CAM_API LIB!!!!!!!!!1
 # pthread library is required for linking against libvs_can_api.a
 set(CMAKE_THREAD_PREFER_PTHREAD TRUE)
 set(THREADS_PREFER_PTHREAD_FLAG TRUE)

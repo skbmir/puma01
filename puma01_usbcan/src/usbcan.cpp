@@ -5,8 +5,8 @@ namespace puma01_usbcan
 
 VSCAN_serial_handler::VSCAN_serial_handler(int write_size, int read_size) : write_buffer_size_(write_size), read_buffer_size_(read_size) // int --> DWORD!!!!
 {
-    write_buffer.resize(write_buffer_size_);
-    read_buffer.resize(read_buffer_size_);
+    write_buffer_.resize(write_buffer_size_);
+    read_buffer_.resize(read_buffer_size_);
 }
 
 VSCAN_serial_handler::~VSCAN_serial_handler()
@@ -53,9 +53,9 @@ char * VSCAN_serial_handler::getStatusString()
 
 bool  VSCAN_serial_handler::readRequest()
 {
-    vscan_status_ = VSCAN_Read(vscan_handle_, read_buffer.data(), read_buffer_size_, &actual_read_frame_number_);
+    vscan_status_ = VSCAN_Read(vscan_handle_, read_buffer_.data(), read_buffer_size_, &actual_read_frame_number_);
 
-    if((vscan_status_!=VSCAN_ERR_OK) || !actual_read_frame_number_) 
+    if(vscan_status_!=VSCAN_ERR_OK) 
     {
         return false;
     }else{
@@ -65,7 +65,7 @@ bool  VSCAN_serial_handler::readRequest()
 
 bool  VSCAN_serial_handler::writeRequest()
 {
-    vscan_status_ = VSCAN_Write(vscan_handle_, write_buffer.data(), write_buffer_size_, &actual_write_frame_number_);
+    vscan_status_ = VSCAN_Write(vscan_handle_, write_buffer_.data(), write_buffer_size_, &actual_write_frame_number_);
 
     if((vscan_status_!=VSCAN_ERR_OK)) 
     {
@@ -74,6 +74,15 @@ bool  VSCAN_serial_handler::writeRequest()
         return true;
     }
 }
+
+std::vector<VSCAN_MSG> VSCAN_serial_handler::getWriteBuffer(){return write_buffer_;}
+std::vector<VSCAN_MSG> VSCAN_serial_handler::getReadBuffer(){return read_buffer_;}
+
+unsigned long VSCAN_serial_handler::getWriteBufferSize(){return write_buffer_size_;}
+unsigned long VSCAN_serial_handler::getReadBufferSize(){return read_buffer_size_;}
+
+unsigned long VSCAN_serial_handler::getActualWriteNum(){return actual_write_frame_number_;}
+unsigned long VSCAN_serial_handler::getActualReadNum(){return actual_read_frame_number_;}
 
 bool  VSCAN_serial_handler::Flush()
 {

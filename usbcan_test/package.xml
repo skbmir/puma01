@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 <package format="2">
-  <name>usbcan_TEST</name>
+  <name>usbcan_test</name>
   <version>0.0.0</version>
-  <description>The usbcan_TEST package</description>
+  <description>The usbcan_test package</description>
 
   <maintainer email="doodu@todo.todo">doodu</maintainer>
 
