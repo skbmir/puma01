@@ -10,8 +10,11 @@ int main(int argc, char** argv)
     ros::init(argc, argv, n_name);
     ros::NodeHandle nh;
 
+    int read_buff_size = 20,
+        write_buff_size = 20;
+
 // USB-CAN init handle
-    puma01_usbcan::VSCAN_serial_handler usbcan_handler; 
+    puma01_usbcan::VSCAN_serial_handler usbcan_handler(write_buff_size,read_buff_size); 
 
 // open CAN port
     ROS_INFO_STREAM_NAMED(n_name, "Connecting to USB-CAN adapter and opening port...");
@@ -22,14 +25,20 @@ int main(int argc, char** argv)
         ROS_INFO_STREAM_NAMED(n_name, "Successfuly connected to USB-CAN adapter and opened port! Status: " << usbcan_handler.getStatusString() << std::endl);
     }
 
+
+    int iter;
+
 // define CAN frame to send
-    usbcan_handler.write_buffer.Id = 0x100;
-    usbcan_handler.write_buffer.Size = 4;
-    usbcan_handler.write_buffer.Flags = VSCAN_FLAGS_STANDARD;
-    usbcan_handler.write_buffer.Data[0] = 0x00;
-    usbcan_handler.write_buffer.Data[1] = 0x01;
-    usbcan_handler.write_buffer.Data[2] = 0x02;
-    usbcan_handler.write_buffer.Data[3] = 0x03;
+    for(VSCAN_MSG msg : usbcan_handler.write_buffer)
+    {
+        msg.Id = (char)iter++;
+        msg.Size = 4;
+        msg.Flags = VSCAN_FLAGS_STANDARD;
+        msg.Data[0] = 0x00;
+        msg.Data[1] = 0x01;
+        msg.Data[2] = 0x02;
+        msg.Data[3] = 0x03;
+    }
 
     ros::Rate rate(0.5);
 
@@ -38,15 +47,15 @@ int main(int argc, char** argv)
 // write
 
 
-//         if(usbcan_handler.writeRequest())
-//         {
-//             if(usbcan_handler.Flush())
-//             {
-//                 ROS_INFO_STREAM_NAMED(n_name, "Wrote CAN-frames!"<< std::endl);
-//             }
-//         }else{
-//             ROS_ERROR_STREAM_NAMED(n_name, "Failed to WRITE data to USB-CAN adapter. Status: " << usbcan_handler.getStatusString() << std::endl);
-//         }
+        if(usbcan_handler.writeRequest())
+        {
+            if(usbcan_handler.Flush())
+            {
+                ROS_INFO_STREAM_NAMED(n_name, "Wrote CAN-frames!"<< std::endl);
+            }
+        }else{
+            ROS_ERROR_STREAM_NAMED(n_name, "Failed to WRITE data to USB-CAN adapter. Status: " << usbcan_handler.getStatusString() << std::endl);
+        }
 
 // // read
 //         if(usbcan_handler.readRequest())

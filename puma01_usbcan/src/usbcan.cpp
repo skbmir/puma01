@@ -3,25 +3,19 @@
 namespace puma01_usbcan
 {
 
-VSCAN_serial_handler::VSCAN_serial_handler()
+VSCAN_serial_handler::VSCAN_serial_handler(int write_size, int read_size) : write_buffer_size_(write_size), read_buffer_size_(read_size) // int --> DWORD!!!!
 {
-// ALLOCATE DYNAMIC MEMORY
-    // read_buffer_ = new VSCAN_MSG;
-    // write_buffer_ = new VSCAN_MSG;
-    // error_string_ = new CHAR[30];
+    write_buffer.resize(write_buffer_size_);
+    read_buffer.resize(read_buffer_size_);
 }
 
 VSCAN_serial_handler::~VSCAN_serial_handler()
 {
-    if(isReady()) //????????????????????????????????????????????????????????
-    {
-        close();
-    }
-
-// FREE DYNAMIC MEMORY
-    // delete [] error_string_;
-    // delete read_buffer_;
-    // delete write_buffer_; 
+    close();
+    // if(isReady()) //????????????????????????????????????????????????????????
+    // {
+        
+    // }
 }
 
 bool VSCAN_serial_handler::open(CHAR * device, DWORD mode, void * speed)
@@ -44,23 +38,11 @@ void VSCAN_serial_handler::close()
 
 bool VSCAN_serial_handler::isReady()
 {
-
     if(vscan_status_==VSCAN_ERR_NO_DEVICE_FOUND || vscan_status_==VSCAN_ERR_INVALID_HANDLE){
         return false;
     }else{
         return true;
     }
-
-// got "... is not constant expression" error
-    // switch(vscan_status_)
-    // {
-    // case VSCAN_ERR_NO_DEVICE_FOUND:
-    //     return false;
-    // case VSCAN_ERR_INVALID_HANDLE:
-    //     return false;
-    // default:
-    //     return true;
-    // }
 }
 
 char * VSCAN_serial_handler::getStatusString()
@@ -71,7 +53,7 @@ char * VSCAN_serial_handler::getStatusString()
 
 bool  VSCAN_serial_handler::readRequest()
 {
-    vscan_status_ = VSCAN_Read(vscan_handle_, &read_buffer, sizeof(read_buffer), &actual_read_frame_number_);
+    vscan_status_ = VSCAN_Read(vscan_handle_, read_buffer.data(), read_buffer_size_, &actual_read_frame_number_);
 
     if((vscan_status_!=VSCAN_ERR_OK) || !actual_read_frame_number_) 
     {
@@ -83,7 +65,7 @@ bool  VSCAN_serial_handler::readRequest()
 
 bool  VSCAN_serial_handler::writeRequest()
 {
-    vscan_status_ = VSCAN_Write(vscan_handle_, &write_buffer, sizeof(write_buffer), &actual_write_frame_number_);
+    vscan_status_ = VSCAN_Write(vscan_handle_, write_buffer.data(), write_buffer_size_, &actual_write_frame_number_);
 
     if((vscan_status_!=VSCAN_ERR_OK)) 
     {
@@ -95,7 +77,7 @@ bool  VSCAN_serial_handler::writeRequest()
 
 bool  VSCAN_serial_handler::Flush()
 {
-    if(VSCAN_Flush(vscan_handle_)!=VSCAN_ERR_OK) 
+    if(VSCAN_Flush(vscan_handle_)!= VSCAN_ERR_OK) 
     {
         return false;
     }else{
