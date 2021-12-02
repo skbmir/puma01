@@ -20,7 +20,7 @@ int main(int argc, char** argv)
     ROS_INFO_STREAM_NAMED(n_name, "Connecting to USB-CAN adapter and opening port...");
 
     // you can use VSCAN_FIRST_FOUND instead tty
-    if(!usbcan_handler.open(tty,VSCAN_MODE_SELF_RECEPTION,VSCAN_SPEED_1M))
+    if(!usbcan_handler.open(tty,VSCAN_MODE_NORMAL,VSCAN_SPEED_1M))
     {
         ROS_ERROR_STREAM_NAMED(n_name, "Failed to connect to USB-CAN adapter and open port! Status: " << usbcan_handler.getStatusString() << std::endl);
     }else{
@@ -72,6 +72,11 @@ int main(int argc, char** argv)
 
         }else{
             ROS_ERROR_STREAM_NAMED(n_name, "Failed to READ data from USB-CAN adapter. Status: " << usbcan_handler.getStatusString() << std::endl);
+        }
+
+        if(!usbcan_handler.noError())
+        {
+            ROS_ERROR_STREAM_NAMED(n_name, "Error detected: " << usbcan_handler.getStatusString() << std::endl);
         }
 
         rate.sleep();

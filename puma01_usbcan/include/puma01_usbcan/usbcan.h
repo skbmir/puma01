@@ -10,23 +10,21 @@ class VSCAN_serial_handler
 
 public:
 
-    VSCAN_serial_handler(int write_size, int read_size); 
-    ~VSCAN_serial_handler();
+    VSCAN_serial_handler(int write_size, int read_size); // constructor with args to specify buffers sizes
+    ~VSCAN_serial_handler(); // destructor
 
-    bool open(CHAR * device, DWORD mode, void * speed);
-    void close();
+    bool open(CHAR * device, DWORD mode, void * speed); // open port 
+    void close(); // closing port 
 
-    void setSpeed(void * speed);
+    void setSpeed(void * speed); // set speed
 
-    bool isReady();
+    bool isReady(); // 
 
     char * getStatusString();
     
     bool readRequest();
     bool writeRequest();
     bool Flush();
-
-    bool pushFrametoBuffer(UINT32 Id, UINT8 Size, UINT8 * Data, UINT8 Flags=VSCAN_FLAGS_STANDARD); //????????????????????????????????????????????????????????
 
     std::vector<VSCAN_MSG> getWriteBuffer();
     std::vector<VSCAN_MSG> getReadBuffer();
@@ -37,8 +35,14 @@ public:
     unsigned long getActualWriteNum();
     unsigned long getActualReadNum();
 
-// ???
     VSCAN_STATUS getStatus();
+
+    bool noError();
+
+
+// not defined functions (
+    bool pushFrametoBuffer(UINT32 Id, UINT8 Size, UINT8 * Data, UINT8 Flags=VSCAN_FLAGS_STANDARD); 
+
     DWORD getMode(); 
     VSCAN_HANDLE getHandle();
 
@@ -46,7 +50,7 @@ public:
     VSCAN_STATUS disableTimeStamp();
     VSCAN_STATUS enableReadBlockingMode();
     VSCAN_STATUS disableReadBlockingMode();
-// ???
+// ) not defined functions 
 
 private:
     std::vector<VSCAN_MSG> read_buffer_; //????????????????????????????????????????????????????????

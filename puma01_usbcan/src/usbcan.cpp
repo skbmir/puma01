@@ -3,7 +3,8 @@
 namespace puma01_usbcan
 {
 
-VSCAN_serial_handler::VSCAN_serial_handler(int write_size, int read_size) : write_buffer_size_(write_size), read_buffer_size_(read_size) // int --> DWORD!!!!
+// int --> DWORD!!!!
+VSCAN_serial_handler::VSCAN_serial_handler(int write_size, int read_size) : write_buffer_size_(write_size), read_buffer_size_(read_size) 
 {
     write_buffer_.resize(write_buffer_size_);
     read_buffer_.resize(read_buffer_size_);
@@ -12,7 +13,9 @@ VSCAN_serial_handler::VSCAN_serial_handler(int write_size, int read_size) : writ
 VSCAN_serial_handler::~VSCAN_serial_handler()
 {
     close();
-    // if(isReady()) //????????????????????????????????????????????????????????
+
+    // need to check if device is ready, to close it???
+    // if(isReady()) 
     // {
         
     // }
@@ -34,7 +37,7 @@ bool VSCAN_serial_handler::open(CHAR * device, DWORD mode, void * speed)
 void VSCAN_serial_handler::close()
 {
     vscan_status_ = VSCAN_Close(vscan_handle_);
-}
+} 
 
 bool VSCAN_serial_handler::isReady()
 {
@@ -75,15 +78,6 @@ bool  VSCAN_serial_handler::writeRequest()
     }
 }
 
-std::vector<VSCAN_MSG> VSCAN_serial_handler::getWriteBuffer(){return write_buffer_;}
-std::vector<VSCAN_MSG> VSCAN_serial_handler::getReadBuffer(){return read_buffer_;}
-
-unsigned long VSCAN_serial_handler::getWriteBufferSize(){return write_buffer_size_;}
-unsigned long VSCAN_serial_handler::getReadBufferSize(){return read_buffer_size_;}
-
-unsigned long VSCAN_serial_handler::getActualWriteNum(){return actual_write_frame_number_;}
-unsigned long VSCAN_serial_handler::getActualReadNum(){return actual_read_frame_number_;}
-
 bool  VSCAN_serial_handler::Flush()
 {
     if(VSCAN_Flush(vscan_handle_)!= VSCAN_ERR_OK) 
@@ -98,6 +92,27 @@ bool  VSCAN_serial_handler::Flush()
 void VSCAN_serial_handler::setSpeed(void * speed)
 {
     vscan_status_ = VSCAN_Ioctl(vscan_handle_, VSCAN_IOCTL_SET_SPEED, speed);
+}
+
+std::vector<VSCAN_MSG> VSCAN_serial_handler::getWriteBuffer(){ return write_buffer_;}
+std::vector<VSCAN_MSG> VSCAN_serial_handler::getReadBuffer(){ return read_buffer_;}
+
+unsigned long VSCAN_serial_handler::getWriteBufferSize(){ return write_buffer_size_;}
+unsigned long VSCAN_serial_handler::getReadBufferSize(){ return read_buffer_size_;}
+
+unsigned long VSCAN_serial_handler::getActualWriteNum(){ return actual_write_frame_number_;}
+unsigned long VSCAN_serial_handler::getActualReadNum(){ return actual_read_frame_number_;}
+
+VSCAN_STATUS VSCAN_serial_handler::getStatus(){ return vscan_status_;}
+
+bool VSCAN_serial_handler::noError()
+{ 
+    if(vscan_status_ == VSCAN_ERR_OK)
+    {
+        return true;
+    }else{
+        return false;
+    }
 }
 
 } // namespace
