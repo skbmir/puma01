@@ -13,6 +13,7 @@ find_package(catkin REQUIRED COMPONENTS
   roscpp
   std_msgs
   urdf
+  orocos_kdl
 )
 
 catkin_package(
