@@ -88,6 +88,30 @@ namespace puma01_controllers
   // info topic
     info_pub_ = n.advertise<std_msgs::Float64>("/error_info",1);
 
+    // KDL tree from URDF
+    KDL::Tree robot_tree;
+
+    if (!kdl_parser::treeFromUrdfModel(urdf, robot_tree)){
+      ROS_ERROR("Failed to construct kdl tree");
+    //return false;
+    }
+
+    // KDL chain from KDL tree
+    if(!robot_tree.getChain("world","link_6",robot_chain_)){
+      ROS_ERROR("Failed to get kdl chain");
+    }
+
+    // defining JntArray for inverse dynamics computing
+    kdl_q_ = KDL::JntArray(robot_chain_.getNrOfJoints());
+    kdl_dq_ = KDL::JntArray(robot_chain_.getNrOfJoints());
+    kdl_ddq_ = KDL::JntArray(robot_chain_.getNrOfJoints());
+    kdl_gravity_ = KDL::JntArray(robot_chain_.getNrOfJoints());
+    kdl_coriolis_ = KDL::JntArray(robot_chain_.getNrOfJoints());
+    kdl_mass_matrix_ = KDL::JntSpaceInertiaMatrix(robot_chain_.getNrOfJoints());
+
+    kdl_mass_matrix_ = KDL::JntSpaceInertiaMatrix(6);
+    g_vector_ = KDL::Vector(0, 0, -9.82);
+
     return true;
   }
 
@@ -110,6 +134,9 @@ namespace puma01_controllers
 
     double time_last= time.now().toSec();
 
+    // // defining inverse dynamics solver
+    KDL::ChainDynParam dynamics_solver(robot_chain_,g_vector_);
+
 		std::array<double, 6> 	err = {0, 0, 0, 0, 0, 0},
                             derr = {0, 0, 0, 0, 0, 0},
                             G = {0, 0, 0, 0, 0, 0},
@@ -118,7 +145,6 @@ namespace puma01_controllers
                             M_ddq = {0, 0, 0, 0, 0, 0};
 
     std::array<double, 9>  M = {0, 0, 0, 0, 0, 0, 0, 0, 0};
-        
 
 		double 	s2 = sin(joints_[1].getPosition()), //sin(q2)
             s2_2 = sin(2.0*joints_[1].getPosition()), //sin(2*q2)

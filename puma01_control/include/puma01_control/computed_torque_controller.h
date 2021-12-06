@@ -12,6 +12,10 @@
 
 #include <std_msgs/Float64.h>
 
+#include <chain.hpp>
+#include <tree.hpp>
+#include <chaindynparam.hpp>
+#include <kdl_parser/kdl_parser.hpp>
 
 namespace puma01_controllers
 {
@@ -58,6 +62,11 @@ private:
 	double cycle_period;
 
 	ros::Publisher	info_pub_; 
+
+	KDL::Chain robot_chain_;
+	KDL::JntArray kdl_q_, kdl_dq_, kdl_ddq_, kdl_gravity_, kdl_coriolis_;
+	KDL::JntSpaceInertiaMatrix kdl_mass_matrix_;
+	KDL::Vector g_vector_;
 
 
 }; //class
