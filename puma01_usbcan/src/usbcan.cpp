@@ -3,11 +3,9 @@
 namespace puma01_usbcan
 {
 
-// int --> DWORD!!!!
-VSCAN_serial_handler::VSCAN_serial_handler(int write_size, int read_size) : write_buffer_size_(write_size), read_buffer_size_(read_size) 
+VSCAN_serial_handler::VSCAN_serial_handler()
 {
-    write_buffer_.resize(write_buffer_size_);
-    read_buffer_.resize(read_buffer_size_);
+
 }
 
 VSCAN_serial_handler::~VSCAN_serial_handler()
@@ -54,9 +52,9 @@ char * VSCAN_serial_handler::getStatusString()
     return error_string_;
 }
 
-bool  VSCAN_serial_handler::readRequest()
+bool  VSCAN_serial_handler::readRequest(VSCAN_MSG * read_buffer, DWORD read_buffer_size)
 {
-    vscan_status_ = VSCAN_Read(vscan_handle_, read_buffer_.data(), read_buffer_size_, &actual_read_frame_number_);
+    vscan_status_ = VSCAN_Read(vscan_handle_, read_buffer, read_buffer_size, &actual_read_frame_number_);
 
     if(vscan_status_!=VSCAN_ERR_OK) 
     {
@@ -66,9 +64,9 @@ bool  VSCAN_serial_handler::readRequest()
     }
 }
 
-bool  VSCAN_serial_handler::writeRequest()
+bool  VSCAN_serial_handler::writeRequest(VSCAN_MSG * write_buffer, DWORD write_buffer_size)
 {
-    vscan_status_ = VSCAN_Write(vscan_handle_, write_buffer_.data(), write_buffer_size_, &actual_write_frame_number_);
+    vscan_status_ = VSCAN_Write(vscan_handle_, write_buffer, write_buffer_size, &actual_write_frame_number_);
 
     if((vscan_status_!=VSCAN_ERR_OK)) 
     {
@@ -94,16 +92,8 @@ void VSCAN_serial_handler::setSpeed(void * speed)
     vscan_status_ = VSCAN_Ioctl(vscan_handle_, VSCAN_IOCTL_SET_SPEED, speed);
 }
 
-std::vector<VSCAN_MSG> VSCAN_serial_handler::getWriteBuffer(){ return write_buffer_;}
-std::vector<VSCAN_MSG> VSCAN_serial_handler::getReadBuffer(){ return read_buffer_;}
-
-unsigned long VSCAN_serial_handler::getWriteBufferSize(){ return write_buffer_size_;}
-unsigned long VSCAN_serial_handler::getReadBufferSize(){ return read_buffer_size_;}
-
 unsigned long VSCAN_serial_handler::getActualWriteNum(){ return actual_write_frame_number_;}
 unsigned long VSCAN_serial_handler::getActualReadNum(){ return actual_read_frame_number_;}
-
-VSCAN_STATUS VSCAN_serial_handler::getStatus(){ return vscan_status_;}
 
 bool VSCAN_serial_handler::noError()
 { 
@@ -114,5 +104,11 @@ bool VSCAN_serial_handler::noError()
         return false;
     }
 }
+
+bool pushFrametoBuffer(UINT32 Id, UINT8 Size, UINT8 * Data, UINT8 Flags=VSCAN_FLAGS_STANDARD)
+{
+    return true;
+}
+
 
 } // namespace
