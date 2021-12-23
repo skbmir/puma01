@@ -67,6 +67,7 @@ private:
 	KDL::JntArray kdl_q_, kdl_dq_, kdl_ddq_, kdl_gravity_, kdl_coriolis_;
 	KDL::JntSpaceInertiaMatrix kdl_mass_matrix_;
 	KDL::Vector g_vector_;
+	// KDL::ChainDynParam matrices_solver_;
 
 
 }; //class

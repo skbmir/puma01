@@ -134,8 +134,14 @@ namespace puma01_controllers
 
     double time_last= time.now().toSec();
 
-    // // defining inverse dynamics solver
-    KDL::ChainDynParam dynamics_solver(robot_chain_,g_vector_);
+    // https://docs.ros.org/en/kinetic/api/orocos_kdl/html/classKDL_1_1ChainIdSolver__RNE.html
+    KDL::ChainIdSolver_RNE dyn_solver(robot_chain_, g_vector_);
+    int solver_ret = dyn_solver.CartToJnt(kdl_q_, kdl_dq_, kdl_ddq_, jnt_wrenches, kdl_gravity_);
+
+    // https://docs.ros.org/en/kinetic/api/orocos_kdl/html/classKDL_1_1ChainDynParam.html
+    // Implementation of a method to calculate the matrices H (inertia),C(coriolis) and G(gravitation) 
+    // for the calculation torques out of the pose and derivatives.
+    // KDL::ChainDynParam matrices_solver_(robot_chain_,g_vector_);
 
 		std::array<double, 6> 	err = {0, 0, 0, 0, 0, 0},
                             derr = {0, 0, 0, 0, 0, 0},
