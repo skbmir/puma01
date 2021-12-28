@@ -12,9 +12,9 @@
 
 #include <std_msgs/Float64.h>
 
-#include <chain.hpp>
-#include <tree.hpp>
-#include <chaindynparam.hpp>
+#include <kdl/chain.hpp>
+#include <kdl/tree.hpp>
+#include <kdl/chaindynparam.hpp>
 #include <kdl_parser/kdl_parser.hpp>
 
 namespace puma01_controllers

@@ -253,6 +253,10 @@ namespace puma01_controllers
 
     int solver_ret = dyn_solver.CartToJnt(kdl_q_, kdl_dq_, kdl_ddq_, null_wrenches, kdl_tau_);
 
+    if(solver_ret!=0)
+    {
+      ROS_ERROR("Solver error!");
+    }
 // KDL <<
 
 		for(unsigned int i=0; i<n_joints_; i++)

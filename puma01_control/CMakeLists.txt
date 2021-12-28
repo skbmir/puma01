@@ -28,6 +28,7 @@ catkin_package(
   #   urdf
   LIBRARIES
     ${PROJECT_NAME}
+    orocos_kdl
   INCLUDE_DIRS
     include
 )
