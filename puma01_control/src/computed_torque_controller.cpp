@@ -93,12 +93,13 @@ namespace puma01_controllers
 
     if (!kdl_parser::treeFromUrdfModel(urdf, robot_tree)){
       ROS_ERROR("Failed to construct kdl tree");
-    //return false;
+      return false;
     }
 
     // KDL chain from KDL tree
-    if(!robot_tree.getChain("world","link_6",robot_chain_)){
+    if(!robot_tree.getChain("link0","link6",robot_chain_)){
       ROS_ERROR("Failed to get kdl chain");
+      return false;
     }
 
     // defining JntArray for inverse dynamics computing
@@ -110,7 +111,7 @@ namespace puma01_controllers
     kdl_gravity_ = KDL::JntArray(robot_chain_.getNrOfJoints());
     kdl_coriolis_ = KDL::JntArray(robot_chain_.getNrOfJoints());
     kdl_mass_matrix_ = KDL::JntSpaceInertiaMatrix(robot_chain_.getNrOfJoints());
-    kdl_mass_matrix_ = KDL::JntSpaceInertiaMatrix(6);
+    kdl_mass_matrix_ = KDL::JntSpaceInertiaMatrix(robot_chain_.getNrOfJoints());
 
     // gravity vector, used in KDL computations
     g_vector_ = KDL::Vector(0, 0, -9.82);
@@ -119,7 +120,7 @@ namespace puma01_controllers
     kdl_tau_ = KDL::JntArray(robot_chain_.getNrOfJoints());
 
     // null wrenches, assigned as a parameter of external forces for inverse dynamics solver
-    null_wrenches.resize(0);
+    null_wrenches.resize(robot_chain_.getNrOfSegments());
 
     return true;
   }
@@ -255,7 +256,7 @@ namespace puma01_controllers
 
     if(solver_ret!=0)
     {
-      ROS_ERROR("Solver error!");
+      ROS_ERROR("Solver error! %s",dyn_solver.strError(solver_ret));
     }
 // KDL <<
 

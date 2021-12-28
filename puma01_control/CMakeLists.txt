@@ -14,6 +14,7 @@ find_package(catkin REQUIRED COMPONENTS
   std_msgs
   urdf
   orocos_kdl
+  kdl_parser
 )
 
 catkin_package(
@@ -28,7 +29,6 @@ catkin_package(
   #   urdf
   LIBRARIES
     ${PROJECT_NAME}
-    orocos_kdl
   INCLUDE_DIRS
     include
 )
