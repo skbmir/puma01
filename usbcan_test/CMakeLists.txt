@@ -4,14 +4,14 @@ project(usbcan_test)
 add_compile_options(-std=c++11)
 
 find_package(catkin REQUIRED COMPONENTS
-  puma01_usbcan
+  vscan_usbcan_api
   roscpp
   std_msgs
 )
 
 catkin_package(
   CATKIN_DEPENDS 
-    puma01_usbcan
+    vscan_usbcan_api
 )
 
 include_directories(

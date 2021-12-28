@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.0.2)
-project(puma01_usbcan)
+project(vscan_usbcan_api)
 
 add_compile_options(-std=c++11)
 

@@ -1,5 +1,5 @@
 #include <ros/ros.h>
-#include <puma01_usbcan/usbcan.h>
+#include <vscan_usbcan_api/usbcan.h>
 
 int main(int argc, char** argv)
 {

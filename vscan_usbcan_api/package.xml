@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 <package format="2">
-  <name>puma01_usbcan</name>
-  <version>0.0.0</version>
-  <description>The puma01_usbcan package</description>
+  <name>vscan_usbcan_api</name>
+  <version>1.0.0</version>
+  <description>Package contains VSCAN USB-CAN Plus adapter API for Linux x86-64 (C++ implementation).</description>
 
   <maintainer email="doodu@todo.todo">doodu</maintainer>
 
@@ -18,10 +18,6 @@
 
   <exec_depend>roscpp</exec_depend>
   <exec_depend>std_msgs</exec_depend>
-
-  <!-- boost library -->
-  <build_depend>libboost-thread-dev</build_depend>
-  <exec_depend>libboost-thread</exec_depend>
 
   <export>
     <!-- Other tools can request additional information be placed here -->

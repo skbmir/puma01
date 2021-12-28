@@ -1,6 +1,6 @@
 #pragma once
 #include <vector>
-#include <puma01_usbcan/vs_can_api.h>
+#include <vscan_usbcan_api/vs_can_api.h>
 
 namespace puma01_usbcan
 {
