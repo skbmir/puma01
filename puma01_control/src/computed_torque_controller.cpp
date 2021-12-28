@@ -73,7 +73,7 @@ namespace puma01_controllers
 
     }
     // commands_buffer_.writeFromNonRT(std::array<double,18>({0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0})); 
-    sub_command_ = n.subscribe<std_msgs::Float64MultiArray>("command", 1, &ComputedTorqueController::commandCB, this);
+    sub_command_ = n.subscribe<std_msgs::Float64MultiArray>("command", 10, &ComputedTorqueController::commandCB, this);
 
 //****************************************************************************************************************************
 
@@ -105,12 +105,21 @@ namespace puma01_controllers
     kdl_q_ = KDL::JntArray(robot_chain_.getNrOfJoints());
     kdl_dq_ = KDL::JntArray(robot_chain_.getNrOfJoints());
     kdl_ddq_ = KDL::JntArray(robot_chain_.getNrOfJoints());
+
+    // terms, resulted after work cycle of ChainDynParam
     kdl_gravity_ = KDL::JntArray(robot_chain_.getNrOfJoints());
     kdl_coriolis_ = KDL::JntArray(robot_chain_.getNrOfJoints());
     kdl_mass_matrix_ = KDL::JntSpaceInertiaMatrix(robot_chain_.getNrOfJoints());
-
     kdl_mass_matrix_ = KDL::JntSpaceInertiaMatrix(6);
+
+    // gravity vector, used in KDL computations
     g_vector_ = KDL::Vector(0, 0, -9.82);
+
+    // torque command, generated with inverse dynamics solver
+    kdl_tau_ = KDL::JntArray(robot_chain_.getNrOfJoints());
+
+    // null wrenches, assigned as a parameter of external forces for inverse dynamics solver
+    null_wrenches.resize(0);
 
     return true;
   }
@@ -134,14 +143,15 @@ namespace puma01_controllers
 
     double time_last= time.now().toSec();
 
+// KDL >>
     // https://docs.ros.org/en/kinetic/api/orocos_kdl/html/classKDL_1_1ChainIdSolver__RNE.html
     KDL::ChainIdSolver_RNE dyn_solver(robot_chain_, g_vector_);
-    int solver_ret = dyn_solver.CartToJnt(kdl_q_, kdl_dq_, kdl_ddq_, jnt_wrenches, kdl_gravity_);
 
     // https://docs.ros.org/en/kinetic/api/orocos_kdl/html/classKDL_1_1ChainDynParam.html
     // Implementation of a method to calculate the matrices H (inertia),C(coriolis) and G(gravitation) 
     // for the calculation torques out of the pose and derivatives.
     // KDL::ChainDynParam matrices_solver_(robot_chain_,g_vector_);
+// KDL <<
 
 		std::array<double, 6> 	err = {0, 0, 0, 0, 0, 0},
                             derr = {0, 0, 0, 0, 0, 0},
@@ -150,19 +160,21 @@ namespace puma01_controllers
                             PD = {0, 0, 0, 0, 0, 0},
                             M_ddq = {0, 0, 0, 0, 0, 0};
 
-    std::array<double, 9>  M = {0, 0, 0, 0, 0, 0, 0, 0, 0};
+    // std::array<double, 9>  M = {0, 0, 0, 0, 0, 0, 0, 0, 0};
 
-		double 	s2 = sin(joints_[1].getPosition()), //sin(q2)
-            s2_2 = sin(2.0*joints_[1].getPosition()), //sin(2*q2)
-            c2_2 = cos(2.0*joints_[1].getPosition()), //cos(2*q2)
-            c2 = cos(joints_[1].getPosition()), //cos(q2)
-            s3 = sin(joints_[2].getPosition()), //sin(q3)
-            c3 = cos(joints_[2].getPosition()), //cos(q3)
-            s23 = sin(joints_[1].getPosition() + joints_[2].getPosition()), //sin(q2 + q3)
-            c23 = cos(joints_[1].getPosition() + joints_[2].getPosition()), //cos(q2 + q3)
-            s23_23 = sin(2.0*(joints_[1].getPosition() + joints_[2].getPosition())),  //sin(2*q2 + 2*q3)
-            c23_2 = cos(2.0*joints_[1].getPosition() + joints_[2].getPosition()); //cos(2*q2 + q3)
+  // precomputed sin/cos for current q
+		// double 	s2 = sin(joints_[1].getPosition()), //sin(q2)
+    //         s2_2 = sin(2.0*joints_[1].getPosition()), //sin(2*q2)
+    //         c2_2 = cos(2.0*joints_[1].getPosition()), //cos(2*q2)
+    //         c2 = cos(joints_[1].getPosition()), //cos(q2)
+    //         s3 = sin(joints_[2].getPosition()), //sin(q3)
+    //         c3 = cos(joints_[2].getPosition()), //cos(q3)
+    //         s23 = sin(joints_[1].getPosition() + joints_[2].getPosition()), //sin(q2 + q3)
+    //         c23 = cos(joints_[1].getPosition() + joints_[2].getPosition()), //cos(q2 + q3)
+    //         s23_23 = sin(2.0*(joints_[1].getPosition() + joints_[2].getPosition())),  //sin(2*q2 + 2*q3)
+    //         c23_2 = cos(2.0*joints_[1].getPosition() + joints_[2].getPosition()); //cos(2*q2 + q3)
     
+  // precomputed sin/cos for desired q
     // double 	s2 = sin(q_desired[1]), //sin(q2)
     //         s2_2 = sin(2.0*q_desired[1]), //sin(2*q2)
     //         c2_2 = cos(2.0*q_desired[1]), //cos(2*q2)
@@ -174,26 +186,23 @@ namespace puma01_controllers
     //         s23_23 = sin(2.0*(q_desired[1] + q_desired[2])),  //sin(2*q2 + 2*q3)
     //         c23_2 = cos(2.0*q_desired[1] + q_desired[2]); //cos(2*q2 + q3)
 
-    double cmd_effort;
-
-
   // vector C for N = 3
-		C[0] = 0.12418*joints_[1].getVelocity()*joints_[1].getVelocity()*s23 - 0.021135*joints_[1].getVelocity()*joints_[1].getVelocity()*s2 + 0.12418*joints_[2].getVelocity()*joints_[2].getVelocity()*s23 + 0.61451*joints_[1].getVelocity()*joints_[1].getVelocity()*c2 - 0.052884*joints_[0].getVelocity()*joints_[1].getVelocity()*s23_23 - 0.052884*joints_[0].getVelocity()*joints_[2].getVelocity()*s23_23 + 0.74714*joints_[0].getVelocity()*joints_[1].getVelocity()*c23_2 + 0.37357*joints_[0].getVelocity()*joints_[2].getVelocity()*c23_2 - 0.014198*joints_[0].getVelocity()*joints_[1].getVelocity()*c2_2 - 0.81386*joints_[0].getVelocity()*joints_[1].getVelocity()*s2_2 + 0.24837*joints_[1].getVelocity()*joints_[2].getVelocity()*s23 + 0.37357*joints_[0].getVelocity()*joints_[2].getVelocity()*c3;
-		C[1] = 0.026442*joints_[0].getVelocity()*joints_[0].getVelocity()*s23_23 - 0.37357*joints_[0].getVelocity()*joints_[0].getVelocity()*c23_2 + 0.0070992*joints_[0].getVelocity()*joints_[0].getVelocity()*c2_2 + 0.40693*joints_[0].getVelocity()*joints_[0].getVelocity()*s2_2 + 0.37357*joints_[2].getVelocity()*joints_[2].getVelocity()*c3 + 0.74714*joints_[1].getVelocity()*joints_[2].getVelocity()*c3;
-		C[2] = 0.026442*joints_[0].getVelocity()*joints_[0].getVelocity()*s23_23 - 0.18679*joints_[0].getVelocity()*joints_[0].getVelocity()*c23_2 - 0.18679*joints_[0].getVelocity()*joints_[0].getVelocity()*c3 - 0.37357*joints_[1].getVelocity()*joints_[1].getVelocity()*c3;
+		// C[0] = 0.12418*joints_[1].getVelocity()*joints_[1].getVelocity()*s23 - 0.021135*joints_[1].getVelocity()*joints_[1].getVelocity()*s2 + 0.12418*joints_[2].getVelocity()*joints_[2].getVelocity()*s23 + 0.61451*joints_[1].getVelocity()*joints_[1].getVelocity()*c2 - 0.052884*joints_[0].getVelocity()*joints_[1].getVelocity()*s23_23 - 0.052884*joints_[0].getVelocity()*joints_[2].getVelocity()*s23_23 + 0.74714*joints_[0].getVelocity()*joints_[1].getVelocity()*c23_2 + 0.37357*joints_[0].getVelocity()*joints_[2].getVelocity()*c23_2 - 0.014198*joints_[0].getVelocity()*joints_[1].getVelocity()*c2_2 - 0.81386*joints_[0].getVelocity()*joints_[1].getVelocity()*s2_2 + 0.24837*joints_[1].getVelocity()*joints_[2].getVelocity()*s23 + 0.37357*joints_[0].getVelocity()*joints_[2].getVelocity()*c3;
+		// C[1] = 0.026442*joints_[0].getVelocity()*joints_[0].getVelocity()*s23_23 - 0.37357*joints_[0].getVelocity()*joints_[0].getVelocity()*c23_2 + 0.0070992*joints_[0].getVelocity()*joints_[0].getVelocity()*c2_2 + 0.40693*joints_[0].getVelocity()*joints_[0].getVelocity()*s2_2 + 0.37357*joints_[2].getVelocity()*joints_[2].getVelocity()*c3 + 0.74714*joints_[1].getVelocity()*joints_[2].getVelocity()*c3;
+		// C[2] = 0.026442*joints_[0].getVelocity()*joints_[0].getVelocity()*s23_23 - 0.18679*joints_[0].getVelocity()*joints_[0].getVelocity()*c23_2 - 0.18679*joints_[0].getVelocity()*joints_[0].getVelocity()*c3 - 0.37357*joints_[1].getVelocity()*joints_[1].getVelocity()*c3;
 
   // mass matrix M for N = 3
-		M[0] = 0.38049*c2_2 - 0.0070992*s2_2 + 0.37357*s3 + 0.052884*c2_2*c3*c2_2*c3 + 0.37357*c2_2*s3 + 0.37357*s2_2*c3 - 0.052884*s2_2*c3*s3 + 2.6859; //M11
-		M[1] = 0.021135*c2 + 0.61451*s2 - 0.12418*c2*c3 + 0.12418*s2*s3;  //M12
-		M[2] =	-0.12418*c23; //M13
+		// M[0] = 0.38049*c2_2 - 0.0070992*s2_2 + 0.37357*s3 + 0.052884*c2_2*c3*c2_2*c3 + 0.37357*c2_2*s3 + 0.37357*s2_2*c3 - 0.052884*s2_2*c3*s3 + 2.6859; //M11
+		// M[1] = 0.021135*c2 + 0.61451*s2 - 0.12418*c2*c3 + 0.12418*s2*s3;  //M12
+		// M[2] =	-0.12418*c23; //M13
 
     //M[3] = M[1]; //M21 = M12
-		M[4] = 0.74714*s3 + 2.1942; //M22
-		M[5] = 0.37357*s3 + 0.33112; //M23
+		// M[4] = 0.74714*s3 + 2.1942; //M22
+		// M[5] = 0.37357*s3 + 0.33112; //M23
 
     //M[6] = M[2];  //M31 = M13
     //M[7] = M[5];  //M32 = M23
-		M[8] = 0.33112;  //M33
+		// M[8] = 0.33112;  //M33
 
   // gravity vector G for N = 6
 		// G[1] = 1.02416*s2 - 37.2347*c2 - 8.54702*s23 - 0.0282528*s23*cos(msg->position[4]) - 0.0282528*c23*cos(msg->position[3])*sin(msg->position[4]);
@@ -202,8 +211,11 @@ namespace puma01_controllers
 		// G[4] = -0.0282528*c23*sin(msg->position[4]) - 0.0282528*s23*cos(msg->position[3])*cos(msg->position[4]);
 
   // gravity vector G for N = 3
-		G[1] = 1.02416*s2 - 37.2347*c2 - 8.48712*s23;
-		G[2] = - 8.48712*s23;
+		// G[1] = 1.02416*s2 - 37.2347*c2 - 8.48712*s23;
+		// G[2] = - 8.48712*s23;
+
+  // torque command 
+    double cmd_effort;
 
 	// computing velocities dq and PID terms
 		for(unsigned int i=0; i<n_joints_; i++)
@@ -219,24 +231,38 @@ namespace puma01_controllers
 
 			derr[i] = dq_desired[i] - joints_[i].getVelocity();
 
-			PD[i] = pid_controllers_[i].computeCommand(err[i], derr[i], period);
+			// PD[i] = pid_controllers_[i].computeCommand(err[i], derr[i], period);
+
+// KDL >>
+      kdl_q_.data[i] = joints_[i].getPosition();
+      kdl_dq_.data[i] = joints_[i].getVelocity();
+      kdl_ddq_.data[i] = pid_controllers_[i].computeCommand(err[i], derr[i], period) + ddq_desired[i];
+// KDL <<
 
     }
 
   // computing M*PD
-    M_ddq[0] = M[0]*(PD[0]+ddq_desired[0]) + M[1]*(PD[1]+ddq_desired[1]) + M[2]*(PD[2]+ddq_desired[2]);
-		M_ddq[1] = M[1]*(PD[0]+ddq_desired[0]) + M[4]*(PD[1]+ddq_desired[1]) + M[5]*(PD[2]+ddq_desired[2]);
-		M_ddq[2] = M[2]*(PD[0]+ddq_desired[0]) + M[5]*(PD[1]+ddq_desired[1]) + M[8]*(PD[2]+ddq_desired[2]); 
-		M_ddq[3] = PD[3]+ddq_desired[3];
-		M_ddq[4] = PD[4]+ddq_desired[4];
-		M_ddq[5] = PD[5]+ddq_desired[5];
+    // M_ddq[0] = M[0]*(PD[0]+ddq_desired[0]) + M[1]*(PD[1]+ddq_desired[1]) + M[2]*(PD[2]+ddq_desired[2]);
+		// M_ddq[1] = M[1]*(PD[0]+ddq_desired[0]) + M[4]*(PD[1]+ddq_desired[1]) + M[5]*(PD[2]+ddq_desired[2]);
+		// M_ddq[2] = M[2]*(PD[0]+ddq_desired[0]) + M[5]*(PD[1]+ddq_desired[1]) + M[8]*(PD[2]+ddq_desired[2]); 
+		// M_ddq[3] = PD[3]+ddq_desired[3];
+		// M_ddq[4] = PD[4]+ddq_desired[4];
+		// M_ddq[5] = PD[5]+ddq_desired[5];
+
+// KDL >>
+
+    int solver_ret = dyn_solver.CartToJnt(kdl_q_, kdl_dq_, kdl_ddq_, null_wrenches, kdl_tau_);
+
+// KDL <<
 
 		for(unsigned int i=0; i<n_joints_; i++)
 		{
 
+    // unaccounting mass matrix M
       //M_ddq[i] = PD[i]+ddq_desired[i];
 
-			cmd_effort = M_ddq[i] + G[i] + C[i];   
+			//cmd_effort = M_ddq[i] + G[i] + C[i];   
+      cmd_effort = kdl_tau_.data[i];
 
       joints_[i].setCommand(cmd_effort);
 

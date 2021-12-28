@@ -64,9 +64,10 @@ private:
 	ros::Publisher	info_pub_; 
 
 	KDL::Chain robot_chain_;
-	KDL::JntArray kdl_q_, kdl_dq_, kdl_ddq_, kdl_gravity_, kdl_coriolis_;
+	KDL::JntArray kdl_q_, kdl_dq_, kdl_ddq_, kdl_gravity_, kdl_coriolis_, kdl_tau_;
 	KDL::JntSpaceInertiaMatrix kdl_mass_matrix_;
 	KDL::Vector g_vector_;
+	KDL::Wrenches null_wrenches;
 	// KDL::ChainDynParam matrices_solver_;
 
 
