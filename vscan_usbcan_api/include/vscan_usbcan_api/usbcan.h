@@ -2,16 +2,16 @@
 #include <vector>
 #include <vscan_usbcan_api/vs_can_api.h>
 
-namespace puma01_usbcan
+namespace vscan_api
 {
 
-class VSCAN_serial_handler
+class usbcan_handle
 {
 
 public:
 
-    VSCAN_serial_handler(); // constructor 
-    ~VSCAN_serial_handler(); // destructor
+    usbcan_handle(); // constructor 
+    ~usbcan_handle(); // destructor
 
     bool open(CHAR * device, DWORD mode, void * speed); // open port 
     void close(); // closing port 
