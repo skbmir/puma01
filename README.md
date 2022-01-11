@@ -17,13 +17,14 @@ sudo apt install ros-noetic-catkin python3-catkin-tools python3-osrf-pycommon
 cd ~/your_moveit_ws/src
 rosdep install -y --from-paths . --ignore-src --rosdistro noetic
 ```
-
+<!--
 ## Описание пакетов:
 **1. puma01_description:** содержит URDF робота;   
 **2. puma01_control:** содержит код кастомных контроллеров, а также файл с их конфигурацией;  
 **3. puma01_gazebo:** содержит launch-файлы для загрузки описания робота в Parameter Server и запуска симуляции Gazebo;  
 **4. puma01_moveit:** пакет создан автоматически при помощи MoveIt Setup Assistant;  
 **5. puma01_trajectory_executer:** содержит ROS-ноду, реализующую примитивный механизм выполнения заранее спланированной траектории;  
+-->
 
 <!--
 ## TO-DO
