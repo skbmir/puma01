@@ -4,7 +4,6 @@ project(force_test)
 # add_compile_options(-std=c++11)
 
 find_package(catkin REQUIRED COMPONENTS
-  dynamic_reconfigure
   geometry_msgs
   roscpp
   std_msgs
@@ -35,9 +34,9 @@ find_package(catkin REQUIRED COMPONENTS
 #   geometry_msgs#   std_msgs
 # )
 
-generate_dynamic_reconfigure_options(
-  cfg/ForceController.cfg
-)
+# generate_dynamic_reconfigure_options(
+#   cfg/ForceController.cfg
+# )
 
 catkin_package(
 #  INCLUDE_DIRS include
