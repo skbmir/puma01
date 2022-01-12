@@ -7,6 +7,8 @@ find_package(catkin REQUIRED COMPONENTS
   geometry_msgs
   roscpp
   std_msgs
+  genmsg
+  actionlib_msgs
 )
 
 # find_package(Boost REQUIRED COMPONENTS system)
@@ -23,16 +25,19 @@ find_package(catkin REQUIRED COMPONENTS
 #   Service2.srv
 # )
 
-# add_action_files(
-#   FILES
-#   Action1.action
-#   Action2.action
-# )
+add_action_files(
+  DIRECTORY
+  action
+  FILES
+  ForceControl.action
+)
 
-# generate_messages(
-#   DEPENDENCIES
-#   geometry_msgs#   std_msgs
-# )
+generate_messages(
+  DEPENDENCIES
+  actionlib_msgs
+  geometry_msgs
+  std_msgs
+)
 
 # generate_dynamic_reconfigure_options(
 #   cfg/ForceController.cfg
