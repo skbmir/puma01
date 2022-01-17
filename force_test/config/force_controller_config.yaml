@@ -1,0 +1,13 @@
+force_controller:
+  x: 
+    pid: {p: 30.0, i: 0.0, d: 5.0}
+  y: 
+    pid: {p: 30.0, i: 0.0, d: 5.0}
+  z: 
+    pid: {p: 30.0, i: 0.0, d: 5.0}
+  rot_x: 
+    pid: {p: 30.0, i: 0.0, d: 5.0}
+  rot_y: 
+    pid: {p: 30.0, i: 0.0, d: 5.0}
+  rot_z: 
+    pid: {p: 30.0, i: 0.0, d: 5.0}

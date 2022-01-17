@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<launch>
+
+    <!-- loading controller configs -->
+    <rosparam command="load" file="$(find force_test)/config/force_controller_config.yaml" />
+
+    <!-- launching controller_manager, which starts the controllers, named in args -->
+    <node name="sim_controller_spawner" pkg="controller_manager" type="spawner"
+      respawn="false" output="screen" ns="/puma01_sim" 
+      args="--namespace=/puma01_sim
+      sim_computed_torque_controller
+      sim_joint_state_controller
+      --timeout 60">
+    </node>  
+
+    <!-- launching custom simple node-topic-based controller for effort command joint hw interface based robot -->
+    <node name="force_controller" pkg="force_test" type="force_controller"/> 
+
+    <node name="force_controller" pkg="force_test" type="force_controller"
+      ns="/force_controller">
+    </node>  
+
+</launch>

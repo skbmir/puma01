@@ -1,9 +1,12 @@
 # Define the goal
+std_msgs/Header header
 std_msgs/Float32MultiArray current_joint_angles
 geometry_msgs/Wrench desired_wrench
 ---
 # Define the result
+std_msgs/Header header
 std_msgs/Float32MultiArray output_torques
 ---
 # Define a feedback message
+std_msgs/Header header
 geometry_msgs/WrenchStamped current_wrench
