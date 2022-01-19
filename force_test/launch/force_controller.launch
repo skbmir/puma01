@@ -1,11 +1,7 @@
-<?xml version="1.0" encoding="UTF-8"?>
 <launch>
 
-    <!-- loading controller configs -->
-    <rosparam command="load" file="$(find force_test)/config/force_controller_config.yaml" />
+    <rosparam file="$(find force_test)/config/force_controller_config.yaml" command="load"/>
 
-    <node name="force_controller" pkg="force_test" type="force_controller"
-      ns="/force_controller">
-    </node>  
+    <node name="force_controller" pkg="force_test" type="force_controller" output="screen"/> 
 
 </launch>

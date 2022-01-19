@@ -8,10 +8,13 @@ find_package(catkin REQUIRED COMPONENTS
   roscpp
   std_msgs
   genmsg
+  actionlib
   actionlib_msgs
+  urdf
+  control_toolbox
 )
 
-# find_package(Boost REQUIRED COMPONENTS system)
+find_package(Boost REQUIRED COMPONENTS system)
 
 # add_message_files(
 #   FILES
@@ -46,13 +49,15 @@ generate_messages(
 catkin_package(
 #  INCLUDE_DIRS include
 #  LIBRARIES force_test
-#  CATKIN_DEPENDS dynamic_reconfigure geometry_msgs roscpp std_msgs
+  CATKIN_DEPENDS 
+    actionlib_msgs
 #  DEPENDS system_lib
 )
 
 include_directories(
-# include
+  include
   ${catkin_INCLUDE_DIRS}
+  ${Boost_INCLUDE_DIRS}
 )
 
 # add_library(${PROJECT_NAME}
@@ -61,15 +66,20 @@ include_directories(
 
 # add_dependencies(${PROJECT_NAME} ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
-# add_executable(${PROJECT_NAME}_node src/force_test_node.cpp)
+add_executable(force_controller src/force_controller.cpp)
 
 # set_target_properties(${PROJECT_NAME}_node PROPERTIES OUTPUT_NAME node PREFIX "")
 
-# add_dependencies(${PROJECT_NAME}_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+target_link_libraries(
+  force_controller
+  ${catkin_LIBRARIES}
+)
 
-# target_link_libraries(${PROJECT_NAME}_node
-#   ${catkin_LIBRARIES}
-# )
+add_dependencies(
+  force_controller 
+  ${${PROJECT_NAME}_EXPORTED_TARGETS} 
+  ${catkin_EXPORTED_TARGETS}
+)
 
 # catkin_install_python(PROGRAMS
 #   scripts/my_python_script

@@ -15,6 +15,7 @@ find_package(catkin REQUIRED COMPONENTS
   ros_control_boilerplate
   roscpp
   std_msgs
+  geometry_msgs
   urdf
   actionlib_msgs 
   actionlib

@@ -143,7 +143,7 @@ int main(int argc, char** argv)
 {
     ros::init(argc, argv, "force_controller");
 
-    ros::NodeHandle nh;
+    ros::NodeHandle nh("/force_controller");
 
     puma01_controllers::ForceController force_controller(nh);
 

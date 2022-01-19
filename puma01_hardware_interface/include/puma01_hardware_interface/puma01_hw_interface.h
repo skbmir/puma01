@@ -37,7 +37,7 @@ public:
 	void SimJointStatesCB(const sensor_msgs::JointState::ConstPtr& msg); 
 	
 	// force controller action client Done callback - for force controller Result receiving
-	void force_controller_ac_DoneCB(const actionlib::SimpleClientGoalState &state, const force_test::ForceControlActionResultConstPtr &result); 
+	void force_controller_ac_DoneCB(const actionlib::SimpleClientGoalState &state, const force_test::ForceControlResultConstPtr &result); 
 
 protected:
 
