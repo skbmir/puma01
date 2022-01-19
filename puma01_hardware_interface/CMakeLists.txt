@@ -16,6 +16,9 @@ find_package(catkin REQUIRED COMPONENTS
   roscpp
   std_msgs
   urdf
+  actionlib_msgs 
+  actionlib
+  force_test
 )
 
 catkin_package(

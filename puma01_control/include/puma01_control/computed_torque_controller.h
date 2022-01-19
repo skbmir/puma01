@@ -53,9 +53,9 @@ private:
 	void enforceJointLimits(double &command, unsigned int index);
 //****************************************************************************************************************************
 
-	std::array<double,6>	q_desired,dq_desired,ddq_desired;
+	std::array<double,6>	q_desired_, dq_desired_, ddq_desired_, tau_compensate_;
 
-	double cycle_period;
+	double cycle_period_;
 
 	ros::Publisher	info_pub_; 
 

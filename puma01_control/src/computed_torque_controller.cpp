@@ -78,12 +78,13 @@ namespace puma01_controllers
 //****************************************************************************************************************************
 
   // init desired values
-    q_desired = {0,0,0,0,0,0};
-    dq_desired = {0,0,0,0,0,0};
-    ddq_desired = {0,0,0,0,0,0};
+    q_desired_ = {0,0,0,0,0,0};
+    dq_desired_ = {0,0,0,0,0,0};
+    ddq_desired_ = {0,0,0,0,0,0};
+    tau_compensate_ = {0,0,0,0,0,0};
 
   // init cycle period value
-    cycle_period = 0.001;
+    cycle_period_ = 0.001;
 
   // info topic
     info_pub_ = n.advertise<std_msgs::Float64>("/error_info",1);
@@ -131,16 +132,16 @@ namespace puma01_controllers
             s23_23 = sin(2.0*(joints_[1].getPosition() + joints_[2].getPosition())),  //sin(2*q2 + 2*q3)
             c23_2 = cos(2.0*joints_[1].getPosition() + joints_[2].getPosition()); //cos(2*q2 + q3)
     
-    // double 	s2 = sin(q_desired[1]), //sin(q2)
-    //         s2_2 = sin(2.0*q_desired[1]), //sin(2*q2)
-    //         c2_2 = cos(2.0*q_desired[1]), //cos(2*q2)
-    //         c2 = cos(q_desired[1]), //cos(q2)
-    //         s3 = sin(q_desired[2]), //sin(q3)
-    //         c3 = cos(q_desired[2]), //cos(q3)
-    //         s23 = sin(q_desired[1] + q_desired[2]), //sin(q2 + q3)
-    //         c23 = cos(q_desired[1] + q_desired[2]), //cos(q2 + q3)
-    //         s23_23 = sin(2.0*(q_desired[1] + q_desired[2])),  //sin(2*q2 + 2*q3)
-    //         c23_2 = cos(2.0*q_desired[1] + q_desired[2]); //cos(2*q2 + q3)
+    // double 	s2 = sin(q_desired_[1]), //sin(q2)
+    //         s2_2 = sin(2.0*q_desired_[1]), //sin(2*q2)
+    //         c2_2 = cos(2.0*q_desired_[1]), //cos(2*q2)
+    //         c2 = cos(q_desired_[1]), //cos(q2)
+    //         s3 = sin(q_desired_[2]), //sin(q3)
+    //         c3 = cos(q_desired_[2]), //cos(q3)
+    //         s23 = sin(q_desired_[1] + q_desired_[2]), //sin(q2 + q3)
+    //         c23 = cos(q_desired_[1] + q_desired_[2]), //cos(q2 + q3)
+    //         s23_23 = sin(2.0*(q_desired_[1] + q_desired_[2])),  //sin(2*q2 + 2*q3)
+    //         c23_2 = cos(2.0*q_desired_[1] + q_desired_[2]); //cos(2*q2 + q3)
 
     double cmd_effort;
 
@@ -180,40 +181,40 @@ namespace puma01_controllers
 		// position error
 			angles::shortest_angular_distance_with_large_limits(
 				joints_[i].getPosition(),
-				q_desired[i],
+				q_desired_[i],
         joint_urdfs_[i]->limits->lower,
         joint_urdfs_[i]->limits->upper,
 				err[i]);
 
-			derr[i] = dq_desired[i] - joints_[i].getVelocity();
+			derr[i] = dq_desired_[i] - joints_[i].getVelocity();
 
 			PD[i] = pid_controllers_[i].computeCommand(err[i], derr[i], period);
 
     }
 
   // computing M*PD
-    M_ddq[0] = M[0]*(PD[0]+ddq_desired[0]) + M[1]*(PD[1]+ddq_desired[1]) + M[2]*(PD[2]+ddq_desired[2]);
-		M_ddq[1] = M[1]*(PD[0]+ddq_desired[0]) + M[4]*(PD[1]+ddq_desired[1]) + M[5]*(PD[2]+ddq_desired[2]);
-		M_ddq[2] = M[2]*(PD[0]+ddq_desired[0]) + M[5]*(PD[1]+ddq_desired[1]) + M[8]*(PD[2]+ddq_desired[2]); 
-		M_ddq[3] = PD[3]+ddq_desired[3];
-		M_ddq[4] = PD[4]+ddq_desired[4];
-		M_ddq[5] = PD[5]+ddq_desired[5];
+    M_ddq[0] = M[0]*(PD[0]+ddq_desired_[0]) + M[1]*(PD[1]+ddq_desired_[1]) + M[2]*(PD[2]+ddq_desired_[2]);
+		M_ddq[1] = M[1]*(PD[0]+ddq_desired_[0]) + M[4]*(PD[1]+ddq_desired_[1]) + M[5]*(PD[2]+ddq_desired_[2]);
+		M_ddq[2] = M[2]*(PD[0]+ddq_desired_[0]) + M[5]*(PD[1]+ddq_desired_[1]) + M[8]*(PD[2]+ddq_desired_[2]); 
+		M_ddq[3] = PD[3]+ddq_desired_[3];
+		M_ddq[4] = PD[4]+ddq_desired_[4];
+		M_ddq[5] = PD[5]+ddq_desired_[5];
 
 		for(unsigned int i=0; i<n_joints_; i++)
 		{
 
-      //M_ddq[i] = PD[i]+ddq_desired[i];
+      //M_ddq[i] = PD[i]+ddq_desired_[i];
 
-			cmd_effort = M_ddq[i] + G[i] + C[i];   
+			cmd_effort = M_ddq[i] + G[i] + C[i] + tau_compensate_[i];   
 
       joints_[i].setCommand(cmd_effort);
 
 		}
 
-    cycle_period = time.now().toSec() - time_last;
+    cycle_period_ = time.now().toSec() - time_last;
 
     std_msgs::Float64 delta_period;
-    delta_period.data = cycle_period;
+    delta_period.data = cycle_period_;
     info_pub_.publish(delta_period);    
     
   }
@@ -221,18 +222,19 @@ namespace puma01_controllers
 // commandCB
   void ComputedTorqueController::commandCB(const std_msgs::Float64MultiArrayConstPtr& msg)
   {
-		if(msg->data.size()!=n_joints_*3)
+		if(msg->data.size()!=n_joints_*4)
 		{
 			ROS_ERROR_STREAM("Command error...");
 			return;
 		}
 		for(unsigned int i=0; i<n_joints_; i++)
 		{
-			q_desired[i] = (double)msg->data[i];    
-			dq_desired[i] = (double)msg->data[i+n_joints_]; 		
-			ddq_desired[i] = (double)msg->data[i+2*n_joints_]; 		
+			q_desired_[i] = (double)msg->data[i];    
+			dq_desired_[i] = (double)msg->data[i+n_joints_]; 		
+			ddq_desired_[i] = (double)msg->data[i+2*n_joints_]; 		
+      tau_compensate_[i] = (double)msg->data[i+3*n_joints_]; 
 
-      enforceJointLimits(q_desired[i],i);
+      enforceJointLimits(q_desired_[i],i);
 
 		}
     // commands_buffer_.writeFromNonRT(msg->data);
