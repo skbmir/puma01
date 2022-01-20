@@ -18,78 +18,78 @@ hardware_interface:
 
   sim_control_mode: 1  # 0: position, 1: velocity
 
-puma01:
-  # Publish all joint states ------------------------------------------
-  joint_state_controller:
-    type: joint_state_controller/JointStateController
-    publish_rate: 100  
+# puma01:
+# Publish all joint states ------------------------------------------
+joint_state_controller:
+  type: joint_state_controller/JointStateController
+  publish_rate: 100  
 
 # Trajectory controller -----------------------------------------------
 
-  trajectory_controller:
-    type: "effort_controllers/JointTrajectoryController"
+trajectory_controller:
+  type: "effort_controllers/JointTrajectoryController"
 
-    joints:
-      - joint_1
-      - joint_2
-      - joint_3
-      - joint_4
-      - joint_5
-      - joint_6
+  joints:
+    - joint_1
+    - joint_2
+    - joint_3
+    - joint_4
+    - joint_5
+    - joint_6
 
-    constraints:
-      goal_time: 0.5                   
-      stopped_velocity_tolerance: 0.02
+  constraints:
+    goal_time: 0.5                   
+    stopped_velocity_tolerance: 0.02
 
-      joint_1:
-        trajectory: 0.05               
-        goal: 0.02         
+    joint_1:
+      trajectory: 0.05               
+      goal: 0.02         
 
-      joint_2:
-        trajectory: 0.05               
-        goal: 0.02     
+    joint_2:
+      trajectory: 0.05               
+      goal: 0.02     
 
-      joint_3:
-        trajectory: 0.05               
-        goal: 0.02        
+    joint_3:
+      trajectory: 0.05               
+      goal: 0.02        
 
-      joint_4:
-        trajectory: 0.05               
-        goal: 0.02         
+    joint_4:
+      trajectory: 0.05               
+      goal: 0.02         
 
-      joint_5:
-        trajectory: 0.05               
-        goal: 0.02         
+    joint_5:
+      trajectory: 0.05               
+      goal: 0.02         
 
-      joint_6:
-        trajectory: 0.05               
-        goal: 0.02      
+    joint_6:
+      trajectory: 0.05               
+      goal: 0.02      
 
-    gains: 
+  gains: 
 
-    # for computed_torque_control implementation
-      # joint_1: {p: 1.0, i: 0.0, d: 2.0} 
-      # joint_2: {p: 30.0, i: 0.0, d: 12.0}
-      # joint_3: {p: 40.0, i: 0.0, d: 35.0}
-      # joint_4: {p: 1.0, i: 0.0, d: 0.5} 
-      # joint_5: {p: 1.0, i: 0.0, d: 0.5}
-      # joint_6: {p: 1.0, i: 0.0, d: 0.5}
+  # for computed_torque_control implementation
+    # joint_1: {p: 1.0, i: 0.0, d: 2.0} 
+    # joint_2: {p: 30.0, i: 0.0, d: 12.0}
+    # joint_3: {p: 40.0, i: 0.0, d: 35.0}
+    # joint_4: {p: 1.0, i: 0.0, d: 0.5} 
+    # joint_5: {p: 1.0, i: 0.0, d: 0.5}
+    # joint_6: {p: 1.0, i: 0.0, d: 0.5}
 
-    # for simple PID
-      joint_1: {p: 100.0, i: 0.0, d: 2.0} 
-      joint_2: {p: 500.0, i: 0.0, d: 12.0}
-      joint_3: {p: 400.0, i: 0.0, d: 35.0}
-      joint_4: {p: 5.0, i: 0.0, d: 0.5} 
-      joint_5: {p: 5.0, i: 0.0, d: 0.5}
-      joint_6: {p: 5.0, i: 0.0, d: 0.5}
+  # for simple PID
+    joint_1: {p: 100.0, i: 0.0, d: 2.0} 
+    joint_2: {p: 500.0, i: 0.0, d: 12.0}
+    joint_3: {p: 400.0, i: 0.0, d: 35.0}
+    joint_4: {p: 5.0, i: 0.0, d: 0.5} 
+    joint_5: {p: 5.0, i: 0.0, d: 0.5}
+    joint_6: {p: 5.0, i: 0.0, d: 0.5}
 
-    state_publish_rate:  50            
-    action_monitor_rate: 30           
-    stop_trajectory_duration: 0     
+  state_publish_rate:  50            
+  action_monitor_rate: 30           
+  stop_trajectory_duration: 0     
 
 # for MoveIt ----------------------------------------------------------
 controller_list:
-- name: puma01/posvelacc_trajectory_controller
+- name: posvelacc_trajectory_controller
   action_ns: follow_joint_trajectory
   type: FollowJointTrajectory
   default: true

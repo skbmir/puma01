@@ -6,7 +6,7 @@
 
   <rosparam file="$(find puma01_hardware_interface)/config/puma01_hw_interface_config.yaml" command="load"/>
 
-  <group ns="puma01">
+  <!-- <group ns="puma01"> -->
 
     <node name="puma01_hw_interface_node" pkg="puma01_hardware_interface" type="puma01_hw_interface" output="screen"/> <param name="robot_description" textfile="$(find puma01_description)/urdf/puma01_sim.urdf" />
 
@@ -15,6 +15,6 @@
 
     <remap from="/joint_trajectory_action" to="/trajectory_controller/follow_joint_trajectory"/> 
 
-  </group>
+  <!-- </group> -->
 
 </launch>
