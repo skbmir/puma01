@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <launch>
-  <!-- <group ns="puma01_sim"> -->
+  <group ns="puma01_sim">
       <!-- loading URDF to Parameter server-->
       <param name="robot_description" textfile="$(find puma01_description)/urdf/puma01_sim.urdf" />
       <arg name="x" default="0"/>
@@ -10,11 +10,11 @@
       <!-- launching Gazebo, empty world -->
       <include file="$(find gazebo_ros)/launch/empty_world.launch">
         <arg name="world_name" value="worlds/empty.world"/>
-        <arg name="paused" value="true"/>
+        <arg name="paused" value="false"/>
         <!-- <arg name="use_sim_time" value="true"/> -->
         <arg name="gui" value="false"/>
-        <arg name="recording" value="false"/>
-        <arg name="debug" value="false"/>
+        <!-- <arg name="recording" value="false"/>
+        <arg name="debug" value="false"/> -->
       </include>  
 
       <!-- spawning the robot model -->
@@ -22,7 +22,7 @@
 
       <!-- launching controllers -->
       <include file="$(find puma01_control)/launch/puma01_controllers.launch"></include>  
-  <!-- </group> -->
+  </group>
 
 </launch>
 
