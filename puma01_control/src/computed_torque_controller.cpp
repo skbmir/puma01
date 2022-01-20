@@ -25,7 +25,7 @@ namespace puma01_controllers
       return false;
     }
 
-    n_joints_ = joint_names_.size();
+    n_joints_ = joint_names_.size(); // mention the passive joint at the end-effector!!
 
     if(n_joints_ == 0){
       ROS_ERROR_STREAM("List of joint names is empty.");

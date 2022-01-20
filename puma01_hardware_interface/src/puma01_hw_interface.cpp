@@ -37,15 +37,14 @@ void puma01HWInterface::init()
 		- register joint interfaces (JointStateInterface and PosVelAccJointInterface)
 	*/
 
-	num_joints_ = joint_names_.size();  // size_t
+	num_joints_ = joint_names_.size();  // std::size_t
 
 	initJointInterfaces(); // call it after num_joints_ has been defined!
 
-	// ROS_INFO_NAMED(name_, "Waiting for force controller action server to be started...");
-	// force_controller_ac_.waitForServer(); // waiting for force controller action server to start
-	// ROS_INFO_NAMED(name_, "Connection with force controller established.");
+	ROS_INFO_NAMED(name_, "Waiting for force controller action server to be started...");
+	force_controller_ac_.waitForServer(); // waiting for force controller action server to start
+	ROS_INFO_NAMED(name_, "Connection with force controller established.");
 
-	ROS_INFO_NAMED(name_, "puma01 hardware interface Ready!");
 }
 
 void puma01HWInterface::read(ros::Duration& elapsed_time)
@@ -55,20 +54,18 @@ void puma01HWInterface::read(ros::Duration& elapsed_time)
 	// OR do nothing and read data from /joint_states topic ??????????????????????????? 
 
 	// define Goal for force controller
-	// wrench_command_.force.x = 0.0;
-	// wrench_command_.force.y = 0.0;
-	// wrench_command_.force.z = 1.0;
-	// wrench_command_.torque.x = 0.0;
-	// wrench_command_.torque.y = 0.0;
-	// wrench_command_.torque.z = 0.0;
+	wrench_command_.force.x = 0.0;
+	wrench_command_.force.y = 0.0;
+	wrench_command_.force.z = 1.0;
+	wrench_command_.torque.x = 0.0;
+	wrench_command_.torque.y = 0.0;
+	wrench_command_.torque.z = 0.0;
 
-	// force_controller_goal_.current_joint_angles.data = joint_position_; // actual joint positions
-	// force_controller_goal_.desired_wrench = wrench_command_; // desired wrench
+	force_controller_goal_.current_joint_angles.data = joint_position_; // actual joint positions
+	force_controller_goal_.desired_wrench = wrench_command_; // desired wrench
 
-	// force_controller_ac_.sendGoal(force_controller_goal_,
-	// 				boost::bind(&puma01_hw_interface_ns::puma01HWInterface::force_controller_ac_DoneCB, this, _1, _2),
-	// 				ForceControllerActionClient::SimpleActiveCallback(),
-	// 				ForceControllerActionClient::SimpleFeedbackCallback());
+	force_controller_ac_.sendGoal(force_controller_goal_,
+					boost::bind(&puma01_hw_interface_ns::puma01HWInterface::force_controller_ac_DoneCB, this, _1, _2));
 
 }
 
@@ -82,7 +79,7 @@ void puma01HWInterface::write(ros::Duration& elapsed_time)
 	// Safety !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 	// enforceLimits(elapsed_time);	
 
-	for(size_t i=0; i<num_joints_; i++)
+	for(std::size_t i=0; i<num_joints_; i++)
 	{
 		traj_cmd_.data[i] = joint_position_command_[i];
 		traj_cmd_.data[i+num_joints_] = joint_velocity_command_[i];
@@ -154,7 +151,7 @@ void puma01HWInterface::initJointInterfaces()
 
 void puma01HWInterface::SimJointStatesCB(const sensor_msgs::JointState::ConstPtr& msg)
 {
-	for(size_t i=0; i<num_joints_; i++)
+	for(std::size_t i=0; i<num_joints_; i++)
 	{
 		joint_position_[i] = msg->position[i];	
 		joint_velocity_[i] = msg->velocity[i];				
@@ -164,11 +161,8 @@ void puma01HWInterface::SimJointStatesCB(const sensor_msgs::JointState::ConstPtr
 void puma01HWInterface::force_controller_ac_DoneCB(const actionlib::SimpleClientGoalState &state, const force_test::ForceControlResultConstPtr &result)
 {
 	ROS_INFO("Finished in state [%s]", state.toString().c_str());
-	for(size_t i=0; i<num_joints_; i++)
-	{
-		joint_effort_[i] = result->output_torques.data[i];
+	joint_effort_ = result->output_torques.data;
 		// joint_effort_command_[i] = result->output_torques.data[i];
-	}
 }
 
 }  // namespace 

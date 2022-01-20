@@ -20,5 +20,7 @@ int main(int argc, char** argv)
 	ros_control_boilerplate::GenericHWControlLoop control_loop(nh, puma01_hw_interface);
 	control_loop.run();  // Blocks until shutdown signal recieved
 
+	ROS_INFO("puma01 hardware interface Ready!");
+
 	return 0;
 }
