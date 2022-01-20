@@ -162,7 +162,7 @@ void puma01HWInterface::SimJointStatesCB(const sensor_msgs::JointState::ConstPtr
 
 void puma01HWInterface::force_controller_ac_DoneCB(const actionlib::SimpleClientGoalState &state, const force_test::ForceControlResultConstPtr &result)
 {
-	ROS_INFO("Finished in state [%s]", state.toString().c_str());
+	// ROS_INFO("Finished in state [%s]", state.toString().c_str());
 	joint_effort_ = result->output_torques.data;
 		// joint_effort_command_[i] = result->output_torques.data[i];
 }

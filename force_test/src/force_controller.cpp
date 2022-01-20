@@ -110,7 +110,7 @@ public:
     void executeCB(const force_test::ForceControlGoalConstPtr &as_goal)
     {
     // get robot configuration
-        ROS_INFO("Goal received!");
+        // ROS_INFO("Goal received!");
         current_joint_angles_ = as_goal->current_joint_angles.data;
 
         // compute jacobian transpose??
@@ -125,7 +125,7 @@ public:
 
         as_result_.header = as_goal->header;
 
-        ROS_INFO("Sent result back.");
+        // ROS_INFO("Sent result back.");
         action_server_.setSucceeded(as_result_);
     }
 
