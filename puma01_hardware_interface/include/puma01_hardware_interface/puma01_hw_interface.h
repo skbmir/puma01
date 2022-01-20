@@ -52,8 +52,7 @@ protected:
 	ros::Publisher sim_cmd_pub_; // publisher for publishing command to simulation
 
 	unsigned int traj_cmd_full_size_,	// number of command vector elements: pos, vel, acc, tau
-				 traj_cmd_acc_num_, 	// offset for acceleration commands in command vector
-				 traj_cmd_tau_num_;		// offset for torque commands in command vector
+				 traj_cmd_acc_offset_; 	// offset for acceleration commands in command vector
 
 	std_msgs::Float64MultiArray traj_cmd_; // trajectory command array
 

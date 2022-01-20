@@ -1,22 +1,28 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <launch>
-    <!-- loading URDF to Parameter server-->
-    <param name="robot_description" textfile="$(find puma01_description)/urdf/puma01_sim.urdf" />
-    <arg name="x" default="0"/>
-    <arg name="y" default="0"/>
-    <arg name="z" default="0"/> 
+  <!-- <group ns="puma01_sim"> -->
+      <!-- loading URDF to Parameter server-->
+      <param name="robot_description" textfile="$(find puma01_description)/urdf/puma01_sim.urdf" />
+      <arg name="x" default="0"/>
+      <arg name="y" default="0"/>
+      <arg name="z" default="0"/> 
 
-    <!-- launching Gazebo, empty world -->
-    <include file="$(find gazebo_ros)/launch/empty_world.launch">
-      <arg name="world_name" value="worlds/empty.world"/>
-      <arg name="paused" value="true"/>
-    </include>  
+      <!-- launching Gazebo, empty world -->
+      <include file="$(find gazebo_ros)/launch/empty_world.launch">
+        <arg name="world_name" value="worlds/empty.world"/>
+        <arg name="paused" value="true"/>
+        <!-- <arg name="use_sim_time" value="true"/> -->
+        <arg name="gui" value="false"/>
+        <arg name="recording" value="false"/>
+        <arg name="debug" value="false"/>
+      </include>  
 
-    <!-- spawning the robot model -->
-    <node name="spawn_urdf" pkg="gazebo_ros" type="spawn_model" args="-urdf -param robot_description -model puma01 -x $(arg x) -y $(arg y) -z $(arg z)" />
+      <!-- spawning the robot model -->
+      <node name="spawn_urdf" pkg="gazebo_ros" type="spawn_model" args="-urdf -param robot_description -model puma01 -x $(arg x) -y $(arg y) -z $(arg z)" />
 
-    <!-- launching controllers -->
-    <include file="$(find puma01_control)/launch/puma01_controllers.launch"></include>  
+      <!-- launching controllers -->
+      <include file="$(find puma01_control)/launch/puma01_controllers.launch"></include>  
+  <!-- </group> -->
 
 </launch>
 

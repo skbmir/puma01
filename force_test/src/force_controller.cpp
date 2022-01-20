@@ -16,9 +16,10 @@ class ForceController
 {
 
 public:
-    ForceController(ros::NodeHandle &nh) : action_server_(nh, "force_controller_action_server", boost::bind(&ForceController::as_ExecuteCB, this, _1), false)
+    ForceController(ros::NodeHandle &nh, std::string action_name) : action_server_(nh, action_name, boost::bind(&ForceController::as_ExecuteCB, this, _1), false)
     {
         action_server_.start();
+        ROS_INFO("Started %s Action server.", action_name.c_str());
         init(nh);
     }
 
@@ -26,6 +27,9 @@ public:
 
     bool init(ros::NodeHandle &nh)
     {  
+
+        // cartesian_parameters_names_.resize(6);
+        cartesian_parameters_names_ = {"force_x", "force_y", "force_z", "torque_x", "torque_y", "torque_z"};
 
     // get parameters from Parameter Server and define gains 
         // if(!nh.param<double>("p_gains", p_gains_, 0.0))
@@ -42,21 +46,25 @@ public:
             return false;
         }
 
+        ROS_INFO("Loaded URDF.");
+
     // resizing current joint angles vector after getting the number of joints
         current_joint_angles_.resize(joints_number_);
 
     // init PID
-        pid_controllers_.resize(axes_number_);
+        pid_controllers_.resize(cartesian_parameters_names_.size());
 
-        for(unsigned int i=0; i<axes_number_; i++)
+        for(unsigned int i=0; i<cartesian_parameters_names_.size(); i++)
         {
         // Load PID Controller using gains set on parameter server
-            if (!pid_controllers_[i].init(ros::NodeHandle(nh, parameters_names_[i] + "/pid")))
+            if (!pid_controllers_[i].init(ros::NodeHandle(nh, cartesian_parameters_names_[i] + "/pid")))
             {
-                ROS_ERROR_STREAM("Failed to load PID parameters from " << parameters_names_[i] + "/pid");
+                ROS_ERROR_STREAM("Failed to load PID parameters from " << cartesian_parameters_names_[i] + "/pid");
                 return false;
             }
         }
+
+        ROS_INFO("PID controllers initialised.");
 
         sensor_sub_ = nh.subscribe<geometry_msgs::WrenchStamped>("/puma01_sim/ft_sensor", 1, &ForceController::getCurrentWrenchCB, this);
 
@@ -67,7 +75,7 @@ public:
     void as_ExecuteCB(const force_test::ForceControlGoalConstPtr &as_goal)
     {
     // get robot configuration
-        for(unsigned int i=0; i<axes_number_; i++)
+        for(unsigned int i=0; i<cartesian_parameters_names_.size(); i++)
         {
             current_joint_angles_[i] = as_goal->current_joint_angles.data[i];
         }
@@ -80,7 +88,7 @@ public:
         // get product of PI-controller output and transposed jacobian, and set it as a result
 
         // as_result_.header = ;
-        for(unsigned int i=0; i<axes_number_; i++)
+        for(unsigned int i=0; i<cartesian_parameters_names_.size(); i++)
         {
             as_result_.output_torques.data[i] = (float)current_joint_angles_[i];
         }
@@ -122,8 +130,7 @@ private:
         struct torque : force {};
     };
 
-// 6 = number of control axes
-    std::vector<std::string> parameters_names_ = {"force_x", "force_y", "force_z", "torque_x", "torque_y", "torque_z"};
+    std::vector<std::string> cartesian_parameters_names_;
 
 // PID
     std::vector<control_toolbox::Pid> pid_controllers_;
@@ -131,7 +138,6 @@ private:
     geometry_msgs::WrenchStamped current_wrench_;
     std::vector<double> current_joint_angles_;
     int joints_number_ = 6; // default value, for puma01 
-    int axes_number_ = 6;
 
     ros::Subscriber sensor_sub_;
 
@@ -143,9 +149,9 @@ int main(int argc, char** argv)
 {
     ros::init(argc, argv, "force_controller");
 
-    ros::NodeHandle nh("/force_controller");
+    ros::NodeHandle nh("force_controller");
 
-    puma01_controllers::ForceController force_controller(nh);
+    puma01_controllers::ForceController force_controller(nh, "force_controller");
 
     ros::spin();
     return 0;

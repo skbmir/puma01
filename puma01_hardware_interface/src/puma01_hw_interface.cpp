@@ -7,7 +7,7 @@
 namespace puma01_hw_interface_ns
 {
 puma01HWInterface::puma01HWInterface(ros::NodeHandle& nh, urdf::Model* urdf_model)
- 	 : ros_control_boilerplate::GenericHWInterface(nh, urdf_model), name_("puma01_hw_interface"), force_controller_ac_("force_controller_action_client", true)
+ 	 : ros_control_boilerplate::GenericHWInterface(nh, urdf_model), name_("puma01_hw_interface"), force_controller_ac_("force_controller", true)
 {
 
 	// for simulation
@@ -41,9 +41,9 @@ void puma01HWInterface::init()
 
 	initJointInterfaces(); // call it after num_joints_ has been defined!
 
-	ROS_INFO_NAMED(name_, "Waiting for force controller action server to be started...");
-	force_controller_ac_.waitForServer(); // waiting for force controller action server to start
-	ROS_INFO_NAMED(name_, "Connection with force controller established.");
+	// ROS_INFO_NAMED(name_, "Waiting for force controller action server to be started...");
+	// force_controller_ac_.waitForServer(); // waiting for force controller action server to start
+	// ROS_INFO_NAMED(name_, "Connection with force controller established.");
 
 	ROS_INFO_NAMED(name_, "puma01 hardware interface Ready!");
 }
@@ -55,20 +55,20 @@ void puma01HWInterface::read(ros::Duration& elapsed_time)
 	// OR do nothing and read data from /joint_states topic ??????????????????????????? 
 
 	// define Goal for force controller
-	wrench_command_.force.x = 0.0;
-	wrench_command_.force.y = 0.0;
-	wrench_command_.force.z = 1.0;
-	wrench_command_.torque.x = 0.0;
-	wrench_command_.torque.y = 0.0;
-	wrench_command_.torque.z = 0.0;
+	// wrench_command_.force.x = 0.0;
+	// wrench_command_.force.y = 0.0;
+	// wrench_command_.force.z = 1.0;
+	// wrench_command_.torque.x = 0.0;
+	// wrench_command_.torque.y = 0.0;
+	// wrench_command_.torque.z = 0.0;
 
-	force_controller_goal_.current_joint_angles.data = joint_position_; // actual joint positions
-	force_controller_goal_.desired_wrench = wrench_command_; // desired wrench
+	// force_controller_goal_.current_joint_angles.data = joint_position_; // actual joint positions
+	// force_controller_goal_.desired_wrench = wrench_command_; // desired wrench
 
-	force_controller_ac_.sendGoal(force_controller_goal_,
-					boost::bind(&puma01_hw_interface_ns::puma01HWInterface::force_controller_ac_DoneCB, this, _1, _2),
-					ForceControllerActionClient::SimpleActiveCallback(),
-					ForceControllerActionClient::SimpleFeedbackCallback());
+	// force_controller_ac_.sendGoal(force_controller_goal_,
+	// 				boost::bind(&puma01_hw_interface_ns::puma01HWInterface::force_controller_ac_DoneCB, this, _1, _2),
+	// 				ForceControllerActionClient::SimpleActiveCallback(),
+	// 				ForceControllerActionClient::SimpleFeedbackCallback());
 
 }
 
@@ -86,8 +86,8 @@ void puma01HWInterface::write(ros::Duration& elapsed_time)
 	{
 		traj_cmd_.data[i] = joint_position_command_[i];
 		traj_cmd_.data[i+num_joints_] = joint_velocity_command_[i];
-		traj_cmd_.data[i+traj_cmd_acc_num_] = joint_acceleration_command_[i];
-		traj_cmd_.data[i+traj_cmd_tau_num_] = joint_effort_command_[i];
+		traj_cmd_.data[i+traj_cmd_acc_offset_] = joint_acceleration_command_[i];
+		traj_cmd_.data[i+traj_cmd_acc_offset_+num_joints_] = joint_effort_command_[i];
 	}
 
 	sim_cmd_pub_.publish(traj_cmd_);
@@ -104,8 +104,7 @@ void puma01HWInterface::initJointInterfaces()
 {
 	// resize sim cmd vector
 	traj_cmd_full_size_ = num_joints_*4;
-	traj_cmd_acc_num_ = num_joints_*2;
-	traj_cmd_tau_num_ = num_joints_*3;
+	traj_cmd_acc_offset_ = num_joints_*2;
 	traj_cmd_.data.resize(traj_cmd_full_size_, 0.0);
 
 	// Status

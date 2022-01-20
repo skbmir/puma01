@@ -1,4 +1,4 @@
-puma01:
+# puma01:
   generic_hw_control_loop:
     loop_hz: 250 
     cycle_time_error_threshold: 0.1
