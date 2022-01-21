@@ -17,12 +17,15 @@
   <build_depend>actionlib</build_depend>
   <build_depend>control_toolbox</build_depend>
   <build_depend>urdf</build_depend>
+  <build_depend>orocos_kdl</build_depend>
+  <build_depend>kdl_parser</build_depend>
 
   <build_export_depend>geometry_msgs</build_export_depend>
   <build_export_depend>roscpp</build_export_depend>
   <build_export_depend>std_msgs</build_export_depend>
   <build_export_depend>control_toolbox</build_export_depend>
   <build_export_depend>urdf</build_export_depend>
+  <build_export_depend>orocos_kdl</build_export_depend>
 
   <exec_depend>geometry_msgs</exec_depend>
   <exec_depend>roscpp</exec_depend>
@@ -31,6 +34,8 @@
   <exec_depend>actionlib</exec_depend>
   <exec_depend>control_toolbox</exec_depend>
   <exec_depend>urdf</exec_depend>
+  <exec_depend>orocos_kdl</exec_depend>
+  <exec_depend>kdl_parser</exec_depend>
 
 
   <!-- The export tag contains other, unspecified, tags -->

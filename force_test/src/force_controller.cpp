@@ -9,6 +9,11 @@
 
 #include <urdf/model.h>
 
+#include <kdl/tree.hpp>
+#include <kdl/frames.hpp>
+#include <kdl/treeiksolvervel_wdls.hpp>
+#include <kdl_parser/kdl_parser.hpp>
+
 namespace puma01_controllers
 {
 
@@ -49,6 +54,12 @@ private:
 
     std::string action_name_;
 
+// KDL
+    KDL::JntArray kdl_q_, kdl_tau_;
+    KDL::Twists kdl_wrench_; // using twist for TreeIkSolverVel
+    KDL::Tree robot_tree;
+    std::vector<std::string> endpoints = {"link0", "link6"};
+
 
 public:
     ForceController(std::string action_name) : action_name_(action_name), action_server_(nh_, action_name, boost::bind(&ForceController::executeCB, this, _1), false)
@@ -84,12 +95,12 @@ public:
         ROS_INFO("Loaded URDF.");
 
     // resizing current joint angles vector after getting the number of joints
-        current_joint_angles_.resize(joints_number_);
+        current_joint_angles_.resize(joints_number_,0.0);
 
     // init PID
         pid_controllers_.resize(cartesian_parameters_names_.size());
 
-        for(unsigned int i=0; i<cartesian_parameters_names_.size(); i++)
+        for(std::size_t i=0; i<cartesian_parameters_names_.size(); i++)
         {
         // Load PID Controller using gains set on parameter server
             if (!pid_controllers_[i].init(ros::NodeHandle(nh_,  action_name_ + "/" + cartesian_parameters_names_[i] + "/pid")))
@@ -103,30 +114,59 @@ public:
 
         sensor_sub_ = nh_.subscribe<geometry_msgs::WrenchStamped>("/puma01_sim/ft_sensor", 1, &ForceController::getCurrentWrenchCB, this);
 
+    // KDL tree from URDF
+
+        if (!kdl_parser::treeFromUrdfModel(urdf, robot_tree)){
+            ROS_ERROR("Failed to construct KDL Tree");
+            return false;
+        }
+        ROS_INFO("KDL Tree constructed from given URDF.");
+
+    // define KDL structures
+        kdl_q_ = KDL::JntArray(6);
+        kdl_tau_ = KDL::JntArray(6);
+        kdl_wrench_ = KDL::Twists();
+
         return true;
     }
 
 // taking goal from action client (hardware_interface in puma01) and performing control cycle action
     void executeCB(const force_test::ForceControlGoalConstPtr &as_goal)
     {
+        bool succeed = true;
     // get robot configuration
         // ROS_INFO("Goal received!");
         current_joint_angles_ = as_goal->current_joint_angles.data;
 
-        // compute jacobian transpose??
+        for(std::size_t i=0; i<cartesian_parameters_names_.size(); i++)
+        {
+            kdl_q_.data[i] = as_goal->current_joint_angles.data[i];
+        }
 
-        // force control cycle
-        // controlCycle(as_goal.desired_wrench)
+    // compute jacobian transpose
+        KDL::TreeIkSolverVel_wdls kdl_TreeIkSolverVel_wdls = KDL::TreeIkSolverVel_wdls(robot_tree,endpoints);
 
-        // get product of PI-controller output and transposed jacobian, and set it as a result
+        if(kdl_TreeIkSolverVel_wdls.CartToJnt(kdl_q_,kdl_wrench_,kdl_tau_)<0)
+        {
+            succeed = false;
+        }
 
-        // as_result_.header = ;
-        as_result_.output_torques.data = current_joint_angles_;
+    // force control cycle
+    // controlCycle(as_goal.desired_wrench)
+
+    // get product of PI-controller output and transposed jacobian, and set it as a result
 
         as_result_.header = as_goal->header;
+        for(std::size_t i=0; i<cartesian_parameters_names_.size(); i++)
+        {
+            as_result_.output_torques.data[i] = kdl_tau_.data[i];
+        }
 
         // ROS_INFO("Sent result back.");
-        action_server_.setSucceeded(as_result_);
+        if(succeed)
+        {
+            action_server_.setSucceeded(as_result_);
+        }
     }
 
 // getting current measurements from force sensor
@@ -134,6 +174,14 @@ public:
     {
         current_wrench_.header = sensor_msg->header;
         current_wrench_.wrench = sensor_msg->wrench;
+
+        kdl_wrench_[0].vel.x(sensor_msg->wrench.force.x);
+        kdl_wrench_[0].vel.y(sensor_msg->wrench.force.y);
+        kdl_wrench_[0].vel.z(sensor_msg->wrench.force.z);
+        kdl_wrench_[0].rot.x(sensor_msg->wrench.torque.x);
+        kdl_wrench_[0].rot.y(sensor_msg->wrench.torque.y);
+        kdl_wrench_[0].rot.z(sensor_msg->wrench.torque.z);
+
     }
 
 // controller cycle

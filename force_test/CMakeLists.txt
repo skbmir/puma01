@@ -12,6 +12,8 @@ find_package(catkin REQUIRED COMPONENTS
   actionlib_msgs
   urdf
   control_toolbox
+  orocos_kdl
+  kdl_parser
 )
 
 find_package(Boost REQUIRED COMPONENTS system)
