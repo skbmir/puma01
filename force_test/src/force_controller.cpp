@@ -123,9 +123,9 @@ public:
         ROS_INFO("KDL Tree constructed from given URDF.");
 
     // define KDL structures
-        kdl_q_ = KDL::JntArray(6);
-        kdl_tau_ = KDL::JntArray(6);
-        kdl_wrench_ = KDL::Twists();
+        // kdl_q_ = KDL::JntArray(6);
+        // kdl_tau_ = KDL::JntArray(6);
+        // kdl_wrench_ = std::make_pair("wrench",KDL::Twist());
 
         return true;
     }
