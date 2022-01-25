@@ -10,8 +10,10 @@
 #include <urdf/model.h>
 
 #include <kdl/tree.hpp>
+#include <kdl/chain.hpp>
 #include <kdl/frames.hpp>
-#include <kdl/treeiksolvervel_wdls.hpp>
+#include <kdl/jacobian.hpp>
+#include <kdl/chainjnttojacsolver.hpp>
 #include <kdl_parser/kdl_parser.hpp>
 
 namespace puma01_controllers
@@ -41,6 +43,14 @@ private:
         struct torque : force {};
     };
 
+    void getTranspose(KDL::Jacobian &jaco, KDL::Jacobian &jaco_transpose)
+    {
+        for(unsigned int i=0; i<cartesian_parameters_names_.size(); i++)
+        {
+            jaco_transpose.setColumn(i, jaco.getColumn(i));
+        }
+    }
+
     std::vector<std::string> cartesian_parameters_names_;
 
 // PID
@@ -55,10 +65,12 @@ private:
     std::string action_name_;
 
 // KDL
-    KDL::JntArray kdl_q_, kdl_tau_;
-    KDL::Twists kdl_wrench_; // using twist for TreeIkSolverVel
-    KDL::Tree robot_tree;
-    std::vector<std::string> endpoints = {"link0", "link6"};
+    KDL::JntArray kdl_q_, kdl_wrench_;
+    KDL::Twist kdl_tau_; // don't mind... it's for MultiplyJacobian() func
+    KDL::Tree robot_tree_;
+    KDL::Chain robot_chain_;
+    KDL::Jacobian jacobian_, jacobian_T_;
+    // KDL::ChainJntToJacSolver kdl_JacSolver_;
 
 
 public:
@@ -76,13 +88,6 @@ public:
 
         // cartesian_parameters_names_.resize(6);
         cartesian_parameters_names_ = {"force_x", "force_y", "force_z", "torque_x", "torque_y", "torque_z"};
-
-    // get parameters from Parameter Server and define gains 
-        // if(!nh_.param<double>("p_gains", p_gains_, 0.0))
-        // {
-        //     ROS_ERROR_STREAM("Failed to getParam: p_gains.");
-        //     return false;
-        // }
 
     // get URDF from Parameter Server
         urdf::Model urdf;
@@ -116,16 +121,26 @@ public:
 
     // KDL tree from URDF
 
-        if (!kdl_parser::treeFromUrdfModel(urdf, robot_tree)){
+        if (!kdl_parser::treeFromUrdfModel(urdf, robot_tree_)){
             ROS_ERROR("Failed to construct KDL Tree");
             return false;
         }
         ROS_INFO("KDL Tree constructed from given URDF.");
 
+    // KDL chain from KDL tree
+        if(!robot_tree_.getChain("link0","link6",robot_chain_)){
+            ROS_ERROR("Failed to get KDL chain");
+            return false;
+        }
+        ROS_INFO("KDL Chain got from given KDL Tree.");
+
     // define KDL structures
         // kdl_q_ = KDL::JntArray(6);
         // kdl_tau_ = KDL::JntArray(6);
-        // kdl_wrench_ = std::make_pair("wrench",KDL::Twist());
+        // kdl_wrench_ = {{"wrench",KDL::Twist()}};
+        // endpoints.push_back("link6");
+        jacobian_ = KDL::Jacobian(6);
+        jacobian_T_ = KDL::Jacobian(6);
 
         return true;
     }
@@ -138,18 +153,36 @@ public:
         // ROS_INFO("Goal received!");
         current_joint_angles_ = as_goal->current_joint_angles.data;
 
+        ROS_INFO("1st.");
         for(std::size_t i=0; i<cartesian_parameters_names_.size(); i++)
         {
             kdl_q_.data[i] = as_goal->current_joint_angles.data[i];
         }
 
     // compute jacobian transpose
-        KDL::TreeIkSolverVel_wdls kdl_TreeIkSolverVel_wdls = KDL::TreeIkSolverVel_wdls(robot_tree,endpoints);
 
-        if(kdl_TreeIkSolverVel_wdls.CartToJnt(kdl_q_,kdl_wrench_,kdl_tau_)<0)
+        ROS_INFO("2nd.");
+
+        KDL::ChainJntToJacSolver kdl_JacSolver_ = KDL::ChainJntToJacSolver(robot_chain_);
+
+        ROS_INFO("3d.");
+        
+        int solver_ret = kdl_JacSolver_.JntToJac(kdl_q_, jacobian_); // computing jacobian
+        if(solver_ret!=0)
         {
             succeed = false;
+            ROS_ERROR("Failed to get jacobian.");
         }
+
+        ROS_INFO("4th.");
+
+        getTranspose(jacobian_, jacobian_T_); // transposing jacobian
+
+        ROS_INFO("5th.");
+        
+        KDL::MultiplyJacobian(jacobian_T_, kdl_wrench_, kdl_tau_);  // tau = J^T * F
+
+        ROS_INFO("6th.");
 
     // force control cycle
     // controlCycle(as_goal.desired_wrench)
@@ -159,12 +192,14 @@ public:
         as_result_.header = as_goal->header;
         for(std::size_t i=0; i<cartesian_parameters_names_.size(); i++)
         {
-            as_result_.output_torques.data[i] = kdl_tau_.data[i];
+            as_result_.output_torques.data[i] = kdl_tau_[i];
         }
 
-        // ROS_INFO("Sent result back.");
+        ROS_INFO("7th.");
+
         if(succeed)
-        {
+        {   
+            // ROS_INFO("Sent result back.");
             action_server_.setSucceeded(as_result_);
         }
     }
@@ -175,12 +210,12 @@ public:
         current_wrench_.header = sensor_msg->header;
         current_wrench_.wrench = sensor_msg->wrench;
 
-        kdl_wrench_[0].vel.x(sensor_msg->wrench.force.x);
-        kdl_wrench_[0].vel.y(sensor_msg->wrench.force.y);
-        kdl_wrench_[0].vel.z(sensor_msg->wrench.force.z);
-        kdl_wrench_[0].rot.x(sensor_msg->wrench.torque.x);
-        kdl_wrench_[0].rot.y(sensor_msg->wrench.torque.y);
-        kdl_wrench_[0].rot.z(sensor_msg->wrench.torque.z);
+        kdl_wrench_.data[0] = sensor_msg->wrench.force.x;
+        kdl_wrench_.data[1] = sensor_msg->wrench.force.y;
+        kdl_wrench_.data[2] = sensor_msg->wrench.force.z;
+        kdl_wrench_.data[3] = sensor_msg->wrench.torque.x;
+        kdl_wrench_.data[4] = sensor_msg->wrench.torque.y;
+        kdl_wrench_.data[5] = sensor_msg->wrench.torque.z;
 
     }
 
