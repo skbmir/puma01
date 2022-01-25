@@ -1,9 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <launch>
-  <!-- <group ns="puma01_sim"> -->
+
+  <group ns="puma01_sim">
       <!-- loading URDF to Parameter server-->
-      <!-- DIDN'T WORK WITH OTHER NAMES than robot_description -->
       <param name="robot_description" textfile="$(find puma01_description)/urdf/puma01_sim.urdf" />  
+
+  </group>
+
+      <!-- position of robot in sim space -->
       <arg name="x" default="0"/>
       <arg name="y" default="0"/>
       <arg name="z" default="0"/> 
@@ -19,11 +23,11 @@
       </include>  
 
       <!-- spawning the robot model -->
-      <node name="spawn_urdf" pkg="gazebo_ros" type="spawn_model" args="-urdf -param robot_description -model puma01 -x $(arg x) -y $(arg y) -z $(arg z)" />
+      <node name="spawn_urdf" pkg="gazebo_ros" type="spawn_model" args="-urdf -param /puma01_sim/robot_description -model puma01 -x $(arg x) -y $(arg y) -z $(arg z)" />
+
 
       <!-- launching controllers -->
       <include file="$(find puma01_control)/launch/puma01_controllers.launch"></include>  
-  <!-- </group> -->
 
 </launch>
 

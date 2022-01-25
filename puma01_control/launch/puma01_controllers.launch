@@ -10,7 +10,7 @@
       args="--namespace=/puma01_sim
       sim_computed_torque_controller
       sim_joint_state_controller
-      --timeout 60">
+      --timeout 15">
     </node>  
 
     <!-- launching custom simple node-topic-based controller for effort command joint hw interface based robot -->

@@ -50,7 +50,9 @@ private:
 	std::vector<urdf::JointConstSharedPtr> joint_urdfs_;
 
 	void commandCB(const std_msgs::Float64MultiArrayConstPtr& msg);
-	void enforceJointLimits(double &command, unsigned int index);
+	void enforcePosLimits(double &pos, unsigned int index);
+	void enforceEffLimits(double &eff, unsigned int index);
+	void enforceVelLimits(double &vel, unsigned int index);
 //****************************************************************************************************************************
 
 	std::array<double,6>	q_desired_, dq_desired_, ddq_desired_, tau_compensate_;

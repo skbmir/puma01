@@ -205,7 +205,9 @@ namespace puma01_controllers
 
       //M_ddq[i] = PD[i]+ddq_desired_[i];
 
-			cmd_effort = M_ddq[i] + G[i] + C[i] + tau_compensate_[i];   
+			cmd_effort = M_ddq[i] + G[i] + C[i] + tau_compensate_[i];  
+
+      enforceEffLimits(cmd_effort, i); 
 
       joints_[i].setCommand(cmd_effort);
 
@@ -234,26 +236,47 @@ namespace puma01_controllers
 			ddq_desired_[i] = (double)msg->data[i+2*n_joints_]; 		
       tau_compensate_[i] = (double)msg->data[i+3*n_joints_]; 
 
-      enforceJointLimits(q_desired_[i],i);
+      enforcePosLimits(q_desired_[i],i);
+      enforceVelLimits(dq_desired_[i],i);
 
 		}
     // commands_buffer_.writeFromNonRT(msg->data);
   }
 
-// enforceJointLimits
-  void ComputedTorqueController::enforceJointLimits(double &command, unsigned int index)
+// enforce position command limits
+  void ComputedTorqueController::enforcePosLimits(double &pos, unsigned int index)
   {
     // Check that this joint has applicable limits
     if (joint_urdfs_[index]->type == urdf::Joint::REVOLUTE || joint_urdfs_[index]->type == urdf::Joint::PRISMATIC)
     {
-      if( command > joint_urdfs_[index]->limits->upper ) // above upper limnit
+      if( pos > joint_urdfs_[index]->limits->upper ) // above upper limnit
       {
-        command = joint_urdfs_[index]->limits->upper;
+        pos = joint_urdfs_[index]->limits->upper;
       }
-      else if( command < joint_urdfs_[index]->limits->lower ) // below lower limit
+      else if( pos < joint_urdfs_[index]->limits->lower ) // below lower limit
       {
-        command = joint_urdfs_[index]->limits->lower;
+        pos = joint_urdfs_[index]->limits->lower;
       }
+    }
+  }
+
+// enforce effort command limits
+  void ComputedTorqueController::enforceEffLimits(double &eff, unsigned int index)
+  {
+    // check if effort command transcedent joint limits
+    if( eff > joint_urdfs_[index]->limits->effort ) // above upper limit
+    {
+      eff = joint_urdfs_[index]->limits->effort;
+    }
+  }
+
+// enforce velocity command limits
+  void ComputedTorqueController::enforceVelLimits(double &vel, unsigned int index)
+  {
+    // check if velocity command transcedent joint limits
+    if( vel > joint_urdfs_[index]->limits->velocity ) // above upper limit
+    {
+      vel = joint_urdfs_[index]->limits->velocity;
     }
   }
 
