@@ -57,6 +57,7 @@ private:
     std::vector<control_toolbox::Pid> pid_controllers_;
 
     geometry_msgs::WrenchStamped current_wrench_;
+    geometry_msgs::Wrench desired_wrench_; 
     std::vector<double> current_joint_angles_;
     int joints_number_ = 6; // default value, for puma01 
 
@@ -65,7 +66,7 @@ private:
     std::string action_name_;
 
 // KDL
-    KDL::JntArray kdl_q_, kdl_wrench_;
+    KDL::JntArray kdl_current_joint_angles_, kdl_current_wrench_;
     KDL::Twist kdl_tau_; // don't mind... it's for MultiplyJacobian() func
     KDL::Tree robot_tree_;
     KDL::Chain robot_chain_;
@@ -137,8 +138,8 @@ public:
         ROS_INFO("KDL Chain got from given KDL Tree.");
 
     // define KDL structures
-        kdl_q_ = KDL::JntArray(6);
-        kdl_wrench_ = KDL::JntArray(6);
+        kdl_current_joint_angles_ = KDL::JntArray(6);
+        kdl_current_wrench_ = KDL::JntArray(6);
         jacobian_ = KDL::Jacobian(6);
         jacobian_T_ = KDL::Jacobian(6);
 
@@ -151,42 +152,39 @@ public:
     void executeCB(const force_test::ForceControlGoalConstPtr &as_goal)
     {
         bool succeed = true;
-    // get robot configuration
-        // ROS_INFO("Goal received!");
-        current_joint_angles_ = as_goal->current_joint_angles.data;
 
+    // get robot configuration
+        // current_joint_angles_ = as_goal->current_joint_angles.data;
         for(std::size_t i=0; i<cartesian_parameters_names_.size(); i++)
         {
-            kdl_q_(i) = as_goal->current_joint_angles.data[i];
+            kdl_current_joint_angles_(i) = as_goal->current_joint_angles.data[i];
         }
 
-    // compute jacobian transpose
-
-        // ROS_INFO("2nd.");
-
-        KDL::ChainJntToJacSolver kdl_JacSolver_ = KDL::ChainJntToJacSolver(robot_chain_);
-
-        // ROS_INFO("3d.");
+    // get wrench command
+        // desired_wrench_ = as_goal->desired_wrench;
         
-        int solver_ret = kdl_JacSolver_.JntToJac(kdl_q_, jacobian_); // computing jacobian
+
+    // compute jacobian transpose
+        KDL::ChainJntToJacSolver kdl_JacSolver_ = KDL::ChainJntToJacSolver(robot_chain_);
+        
+        int solver_ret = kdl_JacSolver_.JntToJac(kdl_current_joint_angles_, jacobian_); // computing jacobian
         if(solver_ret!=0)
         {
             succeed = false;
             ROS_ERROR("Failed to get jacobian.");
         }
 
-        // ROS_INFO("4th.");
-
         getTranspose(jacobian_, jacobian_T_); // transposing jacobian
-
-        // ROS_INFO("5th.");
         
-        KDL::MultiplyJacobian(jacobian_T_, kdl_wrench_, kdl_tau_);  // tau = J^T * F
-
-        // ROS_INFO("6th.");
+    // getting tau = J^T * F
+        KDL::MultiplyJacobian(jacobian_T_, kdl_current_wrench_, kdl_tau_);  
 
     // force control cycle
-    // controlCycle(as_goal.desired_wrench)
+        if(!controlCycle())
+        {
+            succeed = false;
+            ROS_ERROR("Control cycle error.");
+        }
 
     // get product of PI-controller output and transposed jacobian
     
@@ -209,25 +207,34 @@ public:
 // getting current measurements from force sensor
     void getCurrentWrenchCB(const geometry_msgs::WrenchStampedConstPtr &sensor_msg)
     {
-        current_wrench_.header = sensor_msg->header;
-        current_wrench_.wrench = sensor_msg->wrench;
+        // current_wrench_.header = sensor_msg->header;
+        // current_wrench_.wrench = sensor_msg->wrench;
 
-        kdl_wrench_.data[0] = sensor_msg->wrench.force.x;
-        kdl_wrench_.data[1] = sensor_msg->wrench.force.y;
-        kdl_wrench_.data[2] = sensor_msg->wrench.force.z;
-        kdl_wrench_.data[3] = sensor_msg->wrench.torque.x;
-        kdl_wrench_.data[4] = sensor_msg->wrench.torque.y;
-        kdl_wrench_.data[5] = sensor_msg->wrench.torque.z;
+        // kdl_current_wrench_.data[0] = sensor_msg->wrench.force.x;
+        // kdl_current_wrench_.data[1] = sensor_msg->wrench.force.y;
+        // kdl_current_wrench_.data[2] = sensor_msg->wrench.force.z;
+        // kdl_current_wrench_.data[3] = sensor_msg->wrench.torque.x;
+        // kdl_current_wrench_.data[4] = sensor_msg->wrench.torque.y;
+        // kdl_current_wrench_.data[5] = sensor_msg->wrench.torque.z;
+
+        kdl_current_wrench_.data[2] = 20; // force z
 
     }
 
 // controller cycle
-    void controlCycle(const geometry_msgs::WrenchConstPtr desired_wrench)
+    bool controlCycle()
     {
 
         // compute wrench error
         // compute PI output
         // return PI output as wrench
+
+        // for(std::size_t i=0; i<cartesian_parameters_names_.size(); i++)
+        // {
+
+        // }
+
+        return true;
     }
 
 }; // class

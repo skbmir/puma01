@@ -41,11 +41,16 @@ void puma01HWInterface::init()
 
 	initJointInterfaces(); // call it after num_joints_ has been defined!
 
-	double as_wait_timeout = 10.0;
+	double as_wait_timeout = 5.0;
 
 	ROS_WARN_NAMED(name_, "Waiting for force controller action server to be started in %d secs...",(int)as_wait_timeout);
 	force_controller_ac_.waitForServer(ros::Duration(as_wait_timeout)); // waiting for force controller action server to start
-	ROS_INFO_NAMED(name_, "Connection with force controller established.");
+	if(force_controller_ac_.isServerConnected())
+	{
+		ROS_INFO_NAMED(name_, "Connection with force controller established.");
+	}else{
+		ROS_ERROR_NAMED(name_, "No force_controller with action interface found! Ignoring.");
+	}
 
 }
 
