@@ -119,6 +119,8 @@ public:
 
         sensor_sub_ = nh_.subscribe<geometry_msgs::WrenchStamped>("/puma01_sim/ft_sensor", 1, &ForceController::getCurrentWrenchCB, this);
 
+        as_result_.output_torques.data.resize(6, 0.0);
+
     // KDL tree from URDF
 
         if (!kdl_parser::treeFromUrdfModel(urdf, robot_tree_)){
@@ -135,12 +137,12 @@ public:
         ROS_INFO("KDL Chain got from given KDL Tree.");
 
     // define KDL structures
-        // kdl_q_ = KDL::JntArray(6);
-        // kdl_tau_ = KDL::JntArray(6);
-        // kdl_wrench_ = {{"wrench",KDL::Twist()}};
-        // endpoints.push_back("link6");
+        kdl_q_ = KDL::JntArray(6);
+        kdl_wrench_ = KDL::JntArray(6);
         jacobian_ = KDL::Jacobian(6);
         jacobian_T_ = KDL::Jacobian(6);
+
+        ROS_INFO("force_controller initialized.");
 
         return true;
     }
@@ -153,19 +155,18 @@ public:
         // ROS_INFO("Goal received!");
         current_joint_angles_ = as_goal->current_joint_angles.data;
 
-        ROS_INFO("1st.");
         for(std::size_t i=0; i<cartesian_parameters_names_.size(); i++)
         {
-            kdl_q_.data[i] = as_goal->current_joint_angles.data[i];
+            kdl_q_(i) = as_goal->current_joint_angles.data[i];
         }
 
     // compute jacobian transpose
 
-        ROS_INFO("2nd.");
+        // ROS_INFO("2nd.");
 
         KDL::ChainJntToJacSolver kdl_JacSolver_ = KDL::ChainJntToJacSolver(robot_chain_);
 
-        ROS_INFO("3d.");
+        // ROS_INFO("3d.");
         
         int solver_ret = kdl_JacSolver_.JntToJac(kdl_q_, jacobian_); // computing jacobian
         if(solver_ret!=0)
@@ -174,28 +175,29 @@ public:
             ROS_ERROR("Failed to get jacobian.");
         }
 
-        ROS_INFO("4th.");
+        // ROS_INFO("4th.");
 
         getTranspose(jacobian_, jacobian_T_); // transposing jacobian
 
-        ROS_INFO("5th.");
+        // ROS_INFO("5th.");
         
         KDL::MultiplyJacobian(jacobian_T_, kdl_wrench_, kdl_tau_);  // tau = J^T * F
 
-        ROS_INFO("6th.");
+        // ROS_INFO("6th.");
 
     // force control cycle
     // controlCycle(as_goal.desired_wrench)
 
-    // get product of PI-controller output and transposed jacobian, and set it as a result
+    // get product of PI-controller output and transposed jacobian
+    
+    //set a result
 
         as_result_.header = as_goal->header;
+
         for(std::size_t i=0; i<cartesian_parameters_names_.size(); i++)
         {
             as_result_.output_torques.data[i] = kdl_tau_[i];
         }
-
-        ROS_INFO("7th.");
 
         if(succeed)
         {   

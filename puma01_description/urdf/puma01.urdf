@@ -150,26 +150,6 @@
     </inertial>
   </link>
 
-  <link name="link_T">
-    <inertial>
-      <mass value="0.001"/>
-      <origin rpy="0  0  0" xyz="0  0  0.05"/>
-      <inertia ixx="0" ixy="0" ixz="0" iyy="0" iyz="0" izz="0"/>                    
-    </inertial>
-    <visual>
-      <origin rpy="0  0  0" xyz="0 0 0.05"/>
-      <geometry>
-        <cylinder length="0.1" radius="0.01"/> 
-      </geometry>
-    </visual>
-    <collision>
-      <origin rpy="0  0 0" xyz="0 0 0.05"/>
-      <geometry>
-        <cylinder length="0.1" radius="0.01"/>
-      </geometry>
-    </collision>
-  </link>
-
 <!-- ADVANCED LINK PARAMETERS --> 
     
   <gazebo reference="link1">
@@ -246,10 +226,6 @@
     <maxContacts>5</maxContacts>
   </gazebo>
 
-  <gazebo reference="link_T">
-    <gravity>false</gravity>
-  </gazebo>
-
 <!-- JOINTS -->    
   <joint name="joint_1" type="revolute">
     <origin xyz="0.0  0.62357 0.0 " rpy="-1.57079632679 -1.57079632679 0.0"/>
@@ -305,106 +281,3 @@
     <limit effort="50.0" velocity="5.0" lower="-4.64" upper="4.64" />
   </joint>
 
-  <joint name="joint_6_T" type="revolute">
-    <origin xyz="0.0 0.0 0.05334" rpy="0 0 0"/>
-    <parent link="link6"/>
-    <child link="link_T"/>
-    <axis xyz="0.0 0.0 1.0"/>
-    <dynamics damping="0.0" friction="0.0"/>
-    <limit effort="1.0" velocity="1.0" lower="0" upper="0" />
-  </joint>
-
-<!-- ROS CONTROL -->   
-  <gazebo>
-    <plugin name="gazebo_ros_control" filename="libgazebo_ros_control.so">
-    <!-- this namespace is not for simulation! -->
-    <robotNamespace>/puma01</robotNamespace> 
-    <legacyModeNS>true</legacyModeNS>
-    <robotBaseFrame>link0</robotBaseFrame>
-    </plugin>
-  </gazebo>
-
-<!-- TRANSMISSIONS -->     
-  <transmission name="trans_1">
-    <type>transmission_interface/SimpleTransmission</type>
-    <joint name="joint_1">
-      <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
-    </joint>
-    <actuator name="motor_1">
-      <mechanicalReduction>1</mechanicalReduction>
-    </actuator>
-  </transmission>
-  
-  <transmission name="trans_2">
-    <type>transmission_interface/SimpleTransmission</type>
-    <joint name="joint_2">
-      <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
-    </joint>
-    <actuator name="motor_2">
-      <mechanicalReduction>1</mechanicalReduction>
-    </actuator>
-  </transmission>
-  
-  <transmission name="trans_3">
-    <type>transmission_interface/SimpleTransmission</type>
-    <joint name="joint_3">
-      <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
-    </joint>
-    <actuator name="motor_3">
-      <mechanicalReduction>1</mechanicalReduction>
-    </actuator>
-  </transmission>
-  
-  <transmission name="trans_4">
-    <type>transmission_interface/SimpleTransmission</type>
-    <joint name="joint_4">
-      <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
-    </joint>
-    <actuator name="motor_4">
-      <mechanicalReduction>1</mechanicalReduction>
-    </actuator>
-  </transmission>
-  
-  <transmission name="trans_5">
-    <type>transmission_interface/SimpleTransmission</type>
-    <joint name="joint_5">
-      <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
-    </joint>
-    <actuator name="motor_5">
-      <mechanicalReduction>1</mechanicalReduction>
-    </actuator>
-  </transmission>
-  
-  <transmission name="trans_6">
-    <type>transmission_interface/SimpleTransmission</type>
-    <joint name="joint_6">
-      <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
-    </joint>
-    <actuator name="motor_6">
-      <mechanicalReduction>1</mechanicalReduction>
-    </actuator>
-  </transmission>
- 
-<!-- FORCE/TORQUE SENSOR -->     
-  <gazebo reference="joint_6_T">
-    <provideFeedback>true</provideFeedback>
-  </gazebo>
-      
-  <gazebo>
-    <plugin name="joint_6_T_ft_sensor" filename="libgazebo_ros_ft_sensor.so">
-      <updateRate>80</updateRate>
-      <topicName>/puma01_sim/ft_sensor</topicName> 
-      <jointName>joint_6_T</jointName>
-      <force_torque>
-        <frame>child</frame>
-        <measure_direction>child_to_parent</measure_direction>
-      </force_torque>
-      <noise>
-        <type>gaussian</type>
-        <mean>0.0</mean>
-        <stddev>0.001</stddev> 
-      </noise>
-    </plugin>
-  </gazebo>
-  
-</robot>
