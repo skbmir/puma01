@@ -264,7 +264,7 @@ namespace puma01_controllers
   void ComputedTorqueController::enforceEffLimits(double &eff, unsigned int index)
   {
 
-    double eff_limit = joint_urdfs_[index]->limits->effort;
+    double eff_limit = joint_urdfs_[index]->limits->effort - 10;
     // check if effort command transcedent joint limits
     if( eff > eff_limit) // above upper limit
     {
@@ -278,7 +278,7 @@ namespace puma01_controllers
 // enforce velocity command limits
   void ComputedTorqueController::enforceVelLimits(double &vel, unsigned int index)
   {
-    double vel_limit = joint_urdfs_[index]->limits->velocity;
+    double vel_limit = joint_urdfs_[index]->limits->velocity - 0.3;
     // check if velocity command transcedent joint limits
     if( vel > vel_limit) // above upper limit
     {
