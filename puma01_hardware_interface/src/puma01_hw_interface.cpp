@@ -83,10 +83,7 @@ void puma01HWInterface::read(ros::Duration& elapsed_time)
 	force_controller_goal_.current_joint_angles.data = joint_position_; // actual joint positions
 	force_controller_goal_.desired_wrench = wrench_command_; // desired wrench
 
-	if(wrench_command_.force.x!=0 && wrench_command_.force.y!=0 && wrench_command_.force.z!=0 && wrench_command_.torque.x!=0 && wrench_command_.torque.y!=0 && wrench_command_.torque.z!=0)
-	{
-		force_controller_ac_.sendGoal(force_controller_goal_, boost::bind(&puma01_hw_interface_ns::puma01HWInterface::force_controller_ac_DoneCB, this, _1, _2));
-	}
+	force_controller_ac_.sendGoal(force_controller_goal_, boost::bind(&puma01_hw_interface_ns::puma01HWInterface::force_controller_ac_DoneCB, this, _1, _2));
 
 }
 
