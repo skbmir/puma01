@@ -37,7 +37,9 @@ public:
 	void SimJointStatesCB(const sensor_msgs::JointState::ConstPtr& msg); 
 	
 	// force controller action client Done callback - for force controller Result receiving
-	void force_controller_ac_DoneCB(const actionlib::SimpleClientGoalState &state, const force_test::ForceControlResultConstPtr &result); 
+	void force_controller_ac_DoneCB(const actionlib::SimpleClientGoalState& state, const force_test::ForceControlResultConstPtr& result); 
+
+	void wrench_command_CB(const geometry_msgs::Wrench& wrench);
 
 protected:
 
@@ -48,7 +50,7 @@ protected:
 
 	hardware_interface::PosVelAccJointInterface posvelacc_joint_interface_; // position-velocity-acceleration joint interface
 
-	ros::Subscriber sim_joint_states_sub_; // subscriber for joint_states in simulation
+	ros::Subscriber sim_joint_states_sub_, wrench_command_sub_; // subscriber for joint_states in simulation
 	ros::Publisher sim_cmd_pub_; // publisher for publishing command to simulation
 
 	unsigned int traj_cmd_full_size_,	// number of command vector elements: pos, vel, acc, tau

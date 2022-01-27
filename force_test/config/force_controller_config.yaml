@@ -4,7 +4,7 @@ force_controller:
   force_y: 
     pid: {p: 0.0, i: 0.0, d: 0.0}
   force_z: 
-    pid: {p: 5.0, i: 0.0, d: 0.0}
+    pid: {p: 0.01, i: 0.0, d: 0.0}
   torque_x: 
     pid: {p: 0.0, i: 0.0, d: 0.0}
   torque_y: 
