@@ -239,12 +239,12 @@ public:
         // current_wrench_.header = sensor_msg->header;
         // current_wrench_.wrench = sensor_msg->wrench;
 
-        kdl_current_wrench_(0) = 0; //sensor_msg->wrench.force.x;
-        kdl_current_wrench_(1) = 0; //sensor_msg->wrench.force.y;
+        kdl_current_wrench_(0) = sensor_msg->wrench.force.x;
+        kdl_current_wrench_(1) = sensor_msg->wrench.force.y;
         kdl_current_wrench_(2) = sensor_msg->wrench.force.z;
-        kdl_current_wrench_(3) = 0; //sensor_msg->wrench.torque.x;
-        kdl_current_wrench_(4) = 0; //sensor_msg->wrench.torque.y;
-        kdl_current_wrench_(5) = 0; //sensor_msg->wrench.torque.z;
+        kdl_current_wrench_(3) = sensor_msg->wrench.torque.x;
+        kdl_current_wrench_(4) = sensor_msg->wrench.torque.y;
+        kdl_current_wrench_(5) = sensor_msg->wrench.torque.z;
 
     // filter wrench data
         for(unsigned int i = 0; i<6; i++)
@@ -252,7 +252,7 @@ public:
             kdl_current_wrench_(i) = fabs(kdl_current_wrench_(i))<0.003 ? 0 : kdl_current_wrench_(i);
             if(kdl_current_wrench_(i) != 0)
             {
-                kdl_current_wrench_(i) = (1*kdl_last_last_wrench_(i)+0.9*kdl_last_wrench_(i)+0.6*kdl_current_wrench_(i))/3;
+                kdl_current_wrench_(i) = (1*kdl_last_last_wrench_(i)+1*kdl_last_wrench_(i)+1*kdl_current_wrench_(i))/3;
                 kdl_last_last_wrench_(i) = kdl_last_wrench_(i);
                 kdl_last_wrench_(i) = kdl_current_wrench_(i);     
             }

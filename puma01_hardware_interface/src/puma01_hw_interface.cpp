@@ -76,10 +76,6 @@ void puma01HWInterface::wrench_command_CB(const geometry_msgs::Wrench& wrench)
 
 void puma01HWInterface::read(ros::Duration& elapsed_time)
 {
-	// read data from serial and fill joint_position_ and joint_velocity_ vectors
-
-	// OR do nothing and read data from /joint_states topic ??????????????????????????? 
-
 	force_controller_goal_.current_joint_angles.data = joint_position_; // actual joint positions
 	force_controller_goal_.desired_wrench = wrench_command_; // desired wrench
 
@@ -89,11 +85,6 @@ void puma01HWInterface::read(ros::Duration& elapsed_time)
 
 void puma01HWInterface::write(ros::Duration& elapsed_time)
 {
-
-	// write commands to serial using values from joint_position_command_, joint_velocity_command_, joint_acceleration_command_
-
-	// OR publish commands to the computed_torque_controller in gazebo???
-
 	// Safety !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 	// enforceLimits(elapsed_time);	
 
@@ -178,13 +169,10 @@ void puma01HWInterface::SimJointStatesCB(const sensor_msgs::JointState::ConstPtr
 
 void puma01HWInterface::force_controller_ac_DoneCB(const actionlib::SimpleClientGoalState &state, const force_test::ForceControlResultConstPtr &result)
 {
-	// ROS_INFO("Finished in state [%s]", state.toString().c_str());
-	
 	for(std::size_t i=0; i<num_joints_; i++)
 	{
 		joint_effort_command_[i] = result->output_torques.data[i];			
-	}
-		// joint_effort_command_[i] = result->output_torques.data[i];
+	}		
 }
 
 }  // namespace 
