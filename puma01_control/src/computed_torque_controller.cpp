@@ -87,7 +87,9 @@ namespace puma01_controllers
     cycle_period_ = 0.001;
 
   // info topic
-    info_pub_ = n.advertise<std_msgs::Float64>("/error_info",1);
+    info_pub_ = n.advertise<std_msgs::Float64MultiArray>("/error_info",1);
+
+    info_msg_.data.resize(2);
 
     return true;
   }
@@ -215,9 +217,11 @@ namespace puma01_controllers
 
     cycle_period_ = time.now().toSec() - time_last;
 
-    std_msgs::Float64 delta_period;
-    delta_period.data = cycle_period_;
-    info_pub_.publish(delta_period);    
+    // std_msgs::Float64 delta_period;
+    // delta_period.data = cycle_period_;
+    info_msg_.data[0] = PD[1]+ddq_desired_[1];
+    info_msg_.data[1] = M_ddq[1];
+    info_pub_.publish(info_msg_);    
     
   }
 

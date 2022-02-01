@@ -76,6 +76,15 @@ void puma01HWInterface::wrench_command_CB(const geometry_msgs::Wrench& wrench)
 
 void puma01HWInterface::read(ros::Duration& elapsed_time)
 {
+	if(!force_controller_ac_.isServerConnected())
+	{
+		force_controller_ac_.waitForServer();
+		if(force_controller_ac_.isServerConnected())
+		{
+			ROS_INFO_NAMED(name_, "Connection with force controller established.");
+		}
+	}
+
 	force_controller_goal_.current_joint_angles.data = joint_position_; // actual joint positions
 	force_controller_goal_.desired_wrench = wrench_command_; // desired wrench
 

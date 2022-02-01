@@ -61,6 +61,8 @@ private:
 
 	ros::Publisher	info_pub_; 
 
+	std_msgs::Float64MultiArray info_msg_;
+
 
 }; //class
 

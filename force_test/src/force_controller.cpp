@@ -178,12 +178,12 @@ public:
 
     // get wrench command
         // desired_wrench_ = as_goal->desired_wrench;
-        kdl_desired_wrench_(0) = 0; //as_goal->desired_wrench.force.x;
-        kdl_desired_wrench_(1) = 0; //as_goal->desired_wrench.force.y;
+        kdl_desired_wrench_(0) = as_goal->desired_wrench.force.x;
+        kdl_desired_wrench_(1) = as_goal->desired_wrench.force.y;
         kdl_desired_wrench_(2) = as_goal->desired_wrench.force.z;
-        kdl_desired_wrench_(3) = 0; //as_goal->desired_wrenchh.torque.x;
-        kdl_desired_wrench_(4) = 0; //as_goal->desired_wrench.torque.y;
-        kdl_desired_wrench_(5) = 0; //as_goal->desired_wrench.torque.z;
+        kdl_desired_wrench_(3) = as_goal->desired_wrench.torque.x;
+        kdl_desired_wrench_(4) = as_goal->desired_wrench.torque.y;
+        kdl_desired_wrench_(5) = as_goal->desired_wrench.torque.z;
 
     // compute transpose jacobian
         KDL::ChainJntToJacSolver kdl_JacSolver_ = KDL::ChainJntToJacSolver(robot_chain_);
@@ -209,7 +209,7 @@ public:
 
             for(unsigned int j=0; j<kdl_current_joint_angles_.rows(); j++)
             {
-                kdl_tau_(i)+=jacobian_(i,j)*PI[i];
+                kdl_tau_(i)+=jacobian_(j,i)*PI[i];
             }
 
             // kdl_tau_(i) *= 0.2;
