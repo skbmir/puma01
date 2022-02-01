@@ -12,13 +12,13 @@ int main(int argc, char **argv)
     if(argc>1)
     {
         tty = argv[1];
-        if(argc>2)
+        if(argc>3)
         {
-            if(argv[2]=="normal")
+            if(argv[2]=="listen")
             {
-                mode = 0;
-            }else if(argv[2]=="self-recept"){
-                mode = 2;
+                mode = VSCAN_MODE_LISTEN_ONLY;
+            }else if(argv[2]=="self"){
+                mode = VSCAN_MODE_SELF_RECEPTION;
             }
         }
     }else{
@@ -39,7 +39,7 @@ int main(int argc, char **argv)
     ROS_INFO_STREAM("Connecting to USB-CAN adapter and opening port...");
 
     // you can use VSCAN_FIRST_FOUND instead tty
-    if(!usbcan_handle.open(tty,VSCAN_MODE_SELF_RECEPTION,VSCAN_SPEED_1M))
+    if(!usbcan_handle.open(tty,mode,VSCAN_SPEED_500K))
     {
         ROS_ERROR_STREAM("Failed to connect to USB-CAN adapter and open port! Status: " << usbcan_handle.getStatusString());
     }else{
@@ -86,7 +86,7 @@ int main(int argc, char **argv)
 
     test_write_buffer.push_back(system_err);
 
-    ros::Rate rate(0.5);
+    ros::Rate rate(1);
 
     while (ros::ok())
     {
@@ -94,18 +94,18 @@ int main(int argc, char **argv)
         {
         
     // write request
-            if(usbcan_handle.writeRequest(test_write_buffer.data(),test_write_buffer.size()))
-            {
-                // if write request SUCCESS --> it means, that write frames, stored in write buffer, were successfully wrote to CAN
-                if(usbcan_handle.Flush())
-                {
-                    ROS_INFO_STREAM("Wrote "<< usbcan_handle.getActualWriteNum() <<" CAN-frames!");
-                }
-            }else{
-                ROS_ERROR_STREAM("Failed to WRITE data to USB-CAN adapter. Status: " << usbcan_handle.getStatusString());
-            }
+            // if(usbcan_handle.writeRequest(test_write_buffer.data(),test_write_buffer.size()))
+            // {
+            //     // if write request SUCCESS --> it means, that write frames, stored in write buffer, were successfully wrote to CAN
+            //     if(usbcan_handle.Flush())
+            //     {
+            //         ROS_INFO_STREAM("Wrote "<< usbcan_handle.getActualWriteNum() <<" CAN-frames!");
+            //     }
+            // }else{
+            //     ROS_ERROR_STREAM("Failed to WRITE data to USB-CAN adapter. Status: " << usbcan_handle.getStatusString());
+            // }
 
-            sleep(0.1);
+            // sleep(0.1);
 
     // read request
             if(usbcan_handle.readRequest(test_read_buffer.data(),test_read_buffer.size()))
@@ -116,11 +116,7 @@ int main(int argc, char **argv)
                 {
                     for(VSCAN_MSG read_msg : test_read_buffer)
                     {
-                        if(read_msg.Id==0x123)
-                        {
-                            ROS_INFO("Got CAN-frame with ID: %03x, Data: %02x %02x %02x %02x", read_msg.Id, read_msg.Data[0], read_msg.Data[1], read_msg.Data[2], read_msg.Data[3]);
-                        }
-
+                        ROS_INFO("Got CAN-frame with ID: %03x, Data: %02x %02x %02x %02x", read_msg.Id, read_msg.Data[0], read_msg.Data[1], read_msg.Data[2], read_msg.Data[3]);
                     }
                 }
             }else{
@@ -132,7 +128,6 @@ int main(int argc, char **argv)
             ROS_ERROR_STREAM("Error detected: " << usbcan_handle.getStatusString());
             
             ROS_WARN_STREAM("Reconnecting to USB-CAN adapter and opening port...");
-
             usbcan_handle.open(tty,VSCAN_MODE_NORMAL,VSCAN_SPEED_1M);
 
         }
