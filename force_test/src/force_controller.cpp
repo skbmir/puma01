@@ -212,10 +212,12 @@ public:
                 kdl_tau_(i)+=jacobian_(j,i)*PI[i];
             }
 
+            ROS_INFO("%i : %g %g %g %g %g %g",i,jacobian_(0,i),jacobian_(1,i),jacobian_(2,i),jacobian_(3,i),jacobian_(4,i),jacobian_(5,i));
+
             // kdl_tau_(i) *= 0.2;
 
             info_msg_.data[i] = kdl_tau_(i);
-            as_result_.output_torques.data[i] = kdl_tau_(i);
+            as_result_.output_torques.data[i] = 0; //kdl_tau_(i);
         }
 
         info_msg_.data[6] = kdl_current_wrench_(2);
