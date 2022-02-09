@@ -64,8 +64,11 @@ private:
                         desired_wrench_, wrench_error_, 
                         tau_;
     
-    std::array<std::array<double,3>,6> translation_, rotation_z_, translation_diff_;  // sets of vectors 1x3
-    std::array<double,3> cross_of_z_p_;
+    std::array<std::array<double,3>,6> translation_, rotation_z_;  // sets of vectors 1x3
+    std::array<double,3> cross_of_z_p_, translation_diff_; // vectors 1x3
+
+    tf2::Quaternion rotation_quat_;
+    tf2::Matrix3x3 rotation_mat_;
 
     std::array<std::array<double,6>,6> jacobian_;  // jacobian 6x6
     
@@ -123,6 +126,7 @@ public:
         as_result_.output_torques.data.resize(6, 0.0);
 
         q_.resize(6, 0.0);  // MAGIC numbers???
+        wrench_.resize(6, 0.0);
         last_wrench_.resize(6, 0.0);
         last_last_wrench_.resize(6, 0.0);
         desired_wrench_.resize(6, 0.0);
@@ -144,6 +148,9 @@ public:
 // taking goal from action client (hardware_interface in puma01) and performing control cycle action
     void executeCB(const force_test::ForceControlGoalConstPtr &as_goal)
     {
+
+        ROS_INFO("---");
+
         bool succeed = true; // execution success mark
         std::array<double,6> PI;
 
@@ -181,10 +188,11 @@ public:
                 // tau_[i]+=jacobian_[j][i]*PI[i];
             }
 
+            // ROS_INFO("%i : %g %g %g %g %g %g",i,jacobian_[i][0],jacobian_[i][1],jacobian_[i][2],jacobian_[i][3],jacobian_[i][4],jacobian_[i][5]);
+
             // info_msg_.data[i] = tau_[i];
             as_result_.output_torques.data[i] = 0; //kdl_tau_(i);
         }
-
 
         as_result_.header = as_goal->header;
 
@@ -237,17 +245,17 @@ public:
             jacobian_[i][1] = rotation_z_[i][1];
             jacobian_[i][2] = rotation_z_[i][2];
 
-            translation_diff_[i][0] = translation_[5][0] - translation_[i][0];
-            translation_diff_[i][1] = translation_[5][1] - translation_[i][1];
-            translation_diff_[i][2] = translation_[5][2] - translation_[i][2];
+            translation_diff_[0] = translation_[5][0] - translation_[i][0];
+            translation_diff_[1] = translation_[5][1] - translation_[i][1];
+            translation_diff_[2] = translation_[5][2] - translation_[i][2];
 
         // cross product of z and p
         // a2*b3 - a3*b2
         // a3*b1 - a1*b3
         // a1*b2 - a2*b1
-            cross_of_z_p_[0] = rotation_z_[i][1] * translation_diff_[i][2] - rotation_z_[i][2] * translation_diff_[i][1];
-            cross_of_z_p_[1] = rotation_z_[i][2] * translation_diff_[i][0] - rotation_z_[i][0] * translation_diff_[i][2];
-            cross_of_z_p_[2] = rotation_z_[i][0] * translation_diff_[i][1] - rotation_z_[i][1] * translation_diff_[i][0];
+            cross_of_z_p_[0] = rotation_z_[i][1] * translation_diff_[2] - rotation_z_[i][2] * translation_diff_[1];
+            cross_of_z_p_[1] = rotation_z_[i][2] * translation_diff_[0] - rotation_z_[i][0] * translation_diff_[2];
+            cross_of_z_p_[2] = rotation_z_[i][0] * translation_diff_[1] - rotation_z_[i][1] * translation_diff_[0];
 
         // J_v
             jacobian_[i][3] = cross_of_z_p_[0];
@@ -264,20 +272,42 @@ public:
     {
         //get all 6 vectors of z = 3rd column of R matrix from quaternion
         //get all 6 vectors of p = translational vector
-       
+
         for(size_t i = 0; i<6; i++) //MAGIC number!!!
         {
+
+            tf2::fromMsg(tf_msg->transforms[i].transform.rotation, rotation_quat_);
+
+            rotation_mat_.setRotation(rotation_quat_);
+
             //2*(x*z + w*y)
             //2*(y*z + w*x)
             //2*(w*w + z*z)-1
 
-            rotation_z_[i][0] = 2*(tf_msg->transforms[i].transform.rotation.x * tf_msg->transforms[i].transform.rotation.z + tf_msg->transforms[i].transform.rotation.w * tf_msg->transforms[i].transform.rotation.y);
-            rotation_z_[i][1] = 2*(tf_msg->transforms[i].transform.rotation.y * tf_msg->transforms[i].transform.rotation.z + tf_msg->transforms[i].transform.rotation.w * tf_msg->transforms[i].transform.rotation.x);
-            rotation_z_[i][2] = 2*(tf_msg->transforms[i].transform.rotation.w * tf_msg->transforms[i].transform.rotation.w + tf_msg->transforms[i].transform.rotation.z * tf_msg->transforms[i].transform.rotation.z)-1;
+            // rotation_z_[i][0] = 2*(tf_msg->transforms[i].transform.rotation.x * tf_msg->transforms[i].transform.rotation.z + tf_msg->transforms[i].transform.rotation.w * tf_msg->transforms[i].transform.rotation.y);
+            // rotation_z_[i][1] = 2*(tf_msg->transforms[i].transform.rotation.y * tf_msg->transforms[i].transform.rotation.z + tf_msg->transforms[i].transform.rotation.w * tf_msg->transforms[i].transform.rotation.x);
+            // rotation_z_[i][2] = 2*(tf_msg->transforms[i].transform.rotation.w * tf_msg->transforms[i].transform.rotation.w + tf_msg->transforms[i].transform.rotation.z * tf_msg->transforms[i].transform.rotation.z)-1;
+
+
+            // rotation_z_[i][0] = 2*(rotation_quat_.getX() * rotation_quat_.getZ() + rotation_quat_.getW() * rotation_quat_.getY());
+            // rotation_z_[i][1] = 2*(rotation_quat_.getY() * rotation_quat_.getZ() + rotation_quat_.getW() * rotation_quat_.getX());
+            // rotation_z_[i][2] = 2*(rotation_quat_.getW() * rotation_quat_.getW() + rotation_quat_.getZ() * rotation_quat_.getZ())-1;
+
+            // rotation_z_[i][0] = rotation_mat_[0][2];
+            // rotation_z_[i][1] = rotation_mat_[1][2];
+            // rotation_z_[i][2] = rotation_mat_[2][2];
+
+            // rotation_z_[i][0] = 2*(rotation_quat_.getX() * rotation_quat_.getZ() + rotation_quat_.getW() * rotation_quat_.getY());
+            // rotation_z_[i][1] = 2*(rotation_quat_.getY() * rotation_quat_.getZ() + rotation_quat_.getW() * rotation_quat_.getX());
+            // rotation_z_[i][2] = 2*(rotation_quat_.getW() * rotation_quat_.getW() + rotation_quat_.getZ() * rotation_quat_.getZ())-1;
+
 
             translation_[i][0] = tf_msg->transforms[i].transform.translation.x;
             translation_[i][1] = tf_msg->transforms[i].transform.translation.y;
             translation_[i][2] = tf_msg->transforms[i].transform.translation.z;
+
+            // ROS_INFO("p %i: %g %g %g",(int)i,translation_[i][0],translation_[i][1],translation_[i][2]);
+            ROS_INFO("z %i: %g %g %g",(int)i,rotation_z_[i][0],rotation_z_[i][1],rotation_z_[i][2]);
         }
             
     }
