@@ -12,8 +12,9 @@ find_package(catkin REQUIRED COMPONENTS
   actionlib_msgs
   urdf
   control_toolbox
-  orocos_kdl
-  kdl_parser
+  tf2
+  tf2_msgs
+  tf2_geometry_msgs
 )
 
 find_package(Boost REQUIRED COMPONENTS system)

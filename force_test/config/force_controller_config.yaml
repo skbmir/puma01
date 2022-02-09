@@ -1,13 +1,14 @@
 force_controller:
-  force_x: 
-    pid: {p: 0.0, i: 0.0, d: 0.0}
-  force_y: 
-    pid: {p: 0.0, i: 0.0, d: 0.0}
-  force_z: 
-    pid: {p: 0.005, i: 0.0, d: 0.0}
   torque_x: 
     pid: {p: 0.0, i: 0.0, d: 0.0}
   torque_y: 
     pid: {p: 0.0, i: 0.0, d: 0.0}
   torque_z: 
     pid: {p: 0.0, i: 0.0, d: 0.0}
+  force_x: 
+    pid: {p: 0.0, i: 0.0, d: 0.0}
+  force_y: 
+    pid: {p: 0.0, i: 0.0, d: 0.0}
+  force_z: 
+    pid: {p: 0.005, i: 0.0, d: 0.0}
+

@@ -5,16 +5,13 @@
 #include <geometry_msgs/WrenchStamped.h>
 #include <std_msgs/Float64MultiArray.h>
 
+#include <tf2_msgs/TFMessage.h>
+#include <tf2_geometry_msgs/tf2_geometry_msgs.h>
+
 #include <control_toolbox/pid.h>
 
 #include <urdf/model.h>
 
-#include <kdl/tree.hpp>
-#include <kdl/chain.hpp>
-#include <kdl/frames.hpp>
-#include <kdl/jacobian.hpp>
-#include <kdl/chainjnttojacsolver.hpp>
-#include <kdl_parser/kdl_parser.hpp>
 
 namespace puma01_controllers
 {
@@ -43,14 +40,6 @@ private:
         struct torque : force {};
     };
 
-    void getTranspose(KDL::Jacobian &jaco, KDL::Jacobian &jaco_transpose)
-    {
-        for(unsigned int i=0; i<cartesian_parameters_names_.size(); i++)
-        {
-            jaco_transpose.setColumn(i, jaco.getColumn(i));
-        }
-    }
-
     std::vector<std::string> cartesian_parameters_names_;
 
 // PID
@@ -61,20 +50,25 @@ private:
     std::vector<double> current_joint_angles_;
     int joints_number_ = 6; // default value, for puma01 
 
-    ros::Subscriber sensor_sub_;
+    ros::Subscriber sensor_sub_, tf_sub_;
 
     std::string action_name_;
 
-// KDL
-    KDL::JntArray kdl_current_joint_angles_, kdl_current_wrench_, kdl_tau_, kdl_last_wrench_, kdl_desired_wrench_, kdl_last_last_wrench_, kdl_wrench_error_;
-    KDL::Tree robot_tree_;
-    KDL::Chain robot_chain_;
-    KDL::Jacobian jacobian_;
-    // KDL::ChainJntToJacSolver kdl_JacSolver_;
 
     ros::Publisher info_pub_;
     std_msgs::Float64MultiArray info_msg_;
 
+    std::vector<double> q_, 
+                        wrench_, 
+                        last_wrench_, last_last_wrench_, 
+                        desired_wrench_, wrench_error_, 
+                        tau_;
+    
+    std::array<std::array<double,3>,6> translation_, rotation_z_, translation_diff_;  // sets of vectors 1x3
+    std::array<double,3> cross_of_z_p_;
+
+    std::array<std::array<double,6>,6> jacobian_;  // jacobian 6x6
+    
     ros::Duration cycle_period_;
     double time_last_ = 0.0;
 
@@ -93,17 +87,18 @@ public:
     {  
 
         // cartesian_parameters_names_.resize(6);
-        cartesian_parameters_names_ = {"force_x", "force_y", "force_z", "torque_x", "torque_y", "torque_z"};
+        cartesian_parameters_names_ = {"torque_x", "torque_y", "torque_z","force_x", "force_y", "force_z"};
 
+    // no need to load URDF while using /tf topic
     // get URDF from Parameter Server
-        urdf::Model urdf;
-        if (!urdf.initParamWithNodeHandle("robot_description", nh_))
-        {
-            ROS_ERROR("Failed to parse URDF file.");
-            return false;
-        }
+        // urdf::Model urdf;
+        // if (!urdf.initParamWithNodeHandle("robot_description", nh_))
+        // {
+        //     ROS_ERROR("Failed to parse URDF file.");
+        //     return false;
+        // }
 
-        ROS_INFO("Loaded URDF.");
+        // ROS_INFO("Loaded URDF.");
 
     // resizing current joint angles vector after getting the number of joints
         current_joint_angles_.resize(joints_number_,0.0);
@@ -127,58 +122,21 @@ public:
 
         as_result_.output_torques.data.resize(6, 0.0);
 
-    // KDL tree from URDF
+        q_.resize(6, 0.0);  // MAGIC numbers???
+        last_wrench_.resize(6, 0.0);
+        last_last_wrench_.resize(6, 0.0);
+        desired_wrench_.resize(6, 0.0);
+        wrench_error_.resize(6, 0.0);
+        tau_.resize(6, 0.0);
 
-        if (!kdl_parser::treeFromUrdfModel(urdf, robot_tree_)){
-            ROS_ERROR("Failed to construct KDL Tree");
-            return false;
-        }
-        ROS_INFO("KDL Tree constructed from given URDF.");
+        tf_sub_ = nh_.subscribe<tf2_msgs::TFMessage>("/tf", 1, &ForceController::getCurrentTFCB, this);
 
-    // KDL chain from KDL tree
-        if(!robot_tree_.getChain("link0","link6",robot_chain_)){
-            ROS_ERROR("Failed to get KDL chain");
-            return false;
-        }
-        ROS_INFO("KDL Chain got from given KDL Tree.");
-        
-        // robot_chain_ = generateChain(); // generate chain from given D-H parameters
-
-    // define KDL structures
-        kdl_current_joint_angles_ = KDL::JntArray(6);
-        kdl_current_wrench_ = KDL::JntArray(6);
-        kdl_desired_wrench_ = KDL::JntArray(6);
-        kdl_wrench_error_ = KDL::JntArray(6);
-        kdl_tau_ = KDL::JntArray(6);
-        kdl_last_wrench_ = KDL::JntArray(6);
-        kdl_last_last_wrench_ = KDL::JntArray(6);
-        jacobian_ = KDL::Jacobian(6);
-
-
+        // to plot info for debug
         info_pub_ = nh_.advertise<std_msgs::Float64MultiArray>("/force_control_info",1);
         info_msg_.data.resize(7);
 
         ROS_INFO("force_controller initialized.");
 
-        KDL::ChainJntToJacSolver kdl_JacSolver_ = KDL::ChainJntToJacSolver(robot_chain_);
-    
-        int solver_ret = kdl_JacSolver_.JntToJac(kdl_current_joint_angles_, jacobian_); // computing jacobian
-        if(solver_ret!=0)
-        {
-            ROS_ERROR("Failed to get jacobian. Error code: %i",solver_ret);
-        }
-
-        for(unsigned int i=0; i<6; i++)
-        {
-            for(unsigned int j=0; j<6; j++)
-            {
-                if(fabs(jacobian_(5-i,j))<0.1)
-                {
-                    jacobian_(5-i,j) = 0;
-                }
-            }
-            ROS_INFO("%i : %g %g %g %g %g %g",i,jacobian_(5-i,0),jacobian_(5-i,1),jacobian_(5-i,2),jacobian_(5-i,3),jacobian_(5-i,4),jacobian_(5-i,5));
-        }
 
         return true;
     }
@@ -193,27 +151,19 @@ public:
         // current_joint_angles_ = as_goal->current_joint_angles.data;
         for(std::size_t i=0; i<cartesian_parameters_names_.size(); i++)
         {
-            // kdl_current_joint_angles_(i) = as_goal->current_joint_angles.data[i];
+            q_[i] = as_goal->current_joint_angles.data[i];
         }
 
     // get wrench command
         // desired_wrench_ = as_goal->desired_wrench;
-        kdl_desired_wrench_(0) = as_goal->desired_wrench.force.x;
-        kdl_desired_wrench_(1) = as_goal->desired_wrench.force.y;
-        kdl_desired_wrench_(2) = as_goal->desired_wrench.force.z;
-        kdl_desired_wrench_(3) = as_goal->desired_wrench.torque.x;
-        kdl_desired_wrench_(4) = as_goal->desired_wrench.torque.y;
-        kdl_desired_wrench_(5) = as_goal->desired_wrench.torque.z;
+        desired_wrench_[0] = as_goal->desired_wrench.force.x;
+        desired_wrench_[1] = as_goal->desired_wrench.force.y;
+        desired_wrench_[2] = as_goal->desired_wrench.force.z;
+        desired_wrench_[3] = as_goal->desired_wrench.torque.x;
+        desired_wrench_[4] = as_goal->desired_wrench.torque.y;
+        desired_wrench_[5] = as_goal->desired_wrench.torque.z;
 
     // compute transpose jacobian
-        KDL::ChainJntToJacSolver kdl_JacSolver_ = KDL::ChainJntToJacSolver(robot_chain_);
-    
-        int solver_ret = kdl_JacSolver_.JntToJac(kdl_current_joint_angles_, jacobian_); // computing jacobian
-        if(solver_ret!=0)
-        {
-            succeed = false;
-            ROS_ERROR("Failed to get jacobian. Error code: %i",solver_ret);
-        }
 
         // KDL::MultiplyJacobian(jacobian_T_, kdl_current_wrench_, kdl_tau_);  // not usable???
 
@@ -224,21 +174,18 @@ public:
 
         for(unsigned int i=0; i<cartesian_parameters_names_.size(); i++)
         {
-            kdl_wrench_error_(i) = kdl_desired_wrench_(i)-kdl_current_wrench_(i); // calculate wrench error
-            PI[i] = pid_controllers_[i].computeCommand(kdl_wrench_error_(i), cycle_period_); // compute wrench PI output
+            wrench_error_[i] = desired_wrench_[i]-wrench_[i]; // calculate wrench error
+            PI[i] = pid_controllers_[i].computeCommand(wrench_error_[i], cycle_period_); // compute wrench PI output
 
-            for(unsigned int j=0; j<kdl_current_joint_angles_.rows(); j++)
+            for(unsigned int j=0; j<6; j++)  // MAGIC number!!! but obviously, it works for 6-dof manipulators
             {
-                kdl_tau_(i)+=jacobian_(j,i)*PI[i];
+                // tau_[i]+=jacobian_(j,i)*PI[i];
             }
 
-            // kdl_tau_(i) *= 0.2;
-
-            info_msg_.data[i] = kdl_tau_(i);
+            info_msg_.data[i] = tau_[i];
             as_result_.output_torques.data[i] = 0; //kdl_tau_(i);
         }
 
-        info_msg_.data[6] = kdl_current_wrench_(2);
 
         as_result_.header = as_goal->header;
 
@@ -256,57 +203,81 @@ public:
 // getting current measurements from force sensor
     void getCurrentWrenchCB(const geometry_msgs::WrenchStampedConstPtr &sensor_msg)
     {
-        // current_wrench_.header = sensor_msg->header;
-        // current_wrench_.wrench = sensor_msg->wrench;
-
-        kdl_current_wrench_(0) = sensor_msg->wrench.force.x;
-        kdl_current_wrench_(1) = sensor_msg->wrench.force.y;
-        kdl_current_wrench_(2) = sensor_msg->wrench.force.z;
-        kdl_current_wrench_(3) = sensor_msg->wrench.torque.x;
-        kdl_current_wrench_(4) = sensor_msg->wrench.torque.y;
-        kdl_current_wrench_(5) = sensor_msg->wrench.torque.z;
+        wrench_[0] = sensor_msg->wrench.force.x;
+        wrench_[1] = sensor_msg->wrench.force.y;
+        wrench_[2] = sensor_msg->wrench.force.z;
+        wrench_[3] = sensor_msg->wrench.torque.x;
+        wrench_[4] = sensor_msg->wrench.torque.y;
+        wrench_[5] = sensor_msg->wrench.torque.z;
 
     // filter wrench data
-        for(unsigned int i = 0; i<6; i++)
+        for(unsigned int i = 0; i<6; i++) //MAGIC number!!
         {
-            kdl_current_wrench_(i) = fabs(kdl_current_wrench_(i))<0.003 ? 0 : kdl_current_wrench_(i);
-            if(kdl_current_wrench_(i) != 0)
-            {
-                kdl_current_wrench_(i) = (1*kdl_last_last_wrench_(i)+1*kdl_last_wrench_(i)+1*kdl_current_wrench_(i))/3;
-                kdl_last_last_wrench_(i) = kdl_last_wrench_(i);
-                kdl_last_wrench_(i) = kdl_current_wrench_(i);     
-            }
+            // wrench_[i] = fabs(wrench_[i])<0.003 ? 0 : wrench_[i];
+            // if(wrench_[i] != 0)
+            // {
+                wrench_[i] = (1*last_last_wrench_[i]+1*last_wrench_[i]+1*wrench_[i])/3;
+                last_last_wrench_[i] = last_wrench_[i];
+                last_wrench_[i] = wrench_[i];     
+            // }
         }
         
     }
 
-    KDL::Chain generateChain()
+    void getJacobian()
     {
+        //get J_[i,j] = z and i = rows from 0 to 2, and columns = j from 0 to 5
+        //get J_v_i = cross(z,p)
+        //form  J_
 
-        double d2 = 0.21844;
-        double a2 = 0.4318;
-        double d4 = 0.0889;
-        double l3 = 0.440669;
+        for(size_t i = 0; i<6; i++) 
+        {
+            jacobian_[i][0] = rotation_z_[i][0];
+            jacobian_[i][1] = rotation_z_[i][1];
+            jacobian_[i][2] = rotation_z_[i][2];
 
-        KDL::Chain local_robot_chain;
+            translation_diff_[i][0] = translation_[5][0] - translation_[i][0];
+            translation_diff_[i][1] = translation_[5][1] - translation_[i][1];
+            translation_diff_[i][2] = translation_[5][2] - translation_[i][2];
 
-        // joint 1
-        local_robot_chain.addSegment(KDL::Segment(KDL::Joint(KDL::Joint::RotZ),KDL::Frame::DH(0, 0, 0, 0)));
-        // joint 2
-        local_robot_chain.addSegment(KDL::Segment(KDL::Joint(KDL::Joint::RotZ),KDL::Frame::DH(0, -M_PI/2, d2, 0)));
-        // joint 3
-        local_robot_chain.addSegment(KDL::Segment(KDL::Joint(KDL::Joint::RotZ),KDL::Frame::DH(a2, 0, -d4, 0)));
-        // joint 4
-        local_robot_chain.addSegment(KDL::Segment(KDL::Joint(KDL::Joint::RotZ),KDL::Frame::DH(0, M_PI/2, l3, 0)));
-        // joint 5
-        local_robot_chain.addSegment(KDL::Segment(KDL::Joint(KDL::Joint::RotZ),KDL::Frame::DH(0, -M_PI/2, 0, 0)));
-        // joint 6
-        local_robot_chain.addSegment(KDL::Segment(KDL::Joint(KDL::Joint::RotZ),KDL::Frame::DH(0, M_PI/2, 0, 0)));
+        // cross product of z and p
+        // a2*b3 - a3*b2
+        // a3*b1 - a1*b3
+        // a1*b2 - a2*b1
+            cross_of_z_p_[0] = rotation_z_[i][1] * translation_diff_[i][2] - rotation_z_[i][2] * translation_diff_[i][1];
+            cross_of_z_p_[1] = rotation_z_[i][2] * translation_diff_[i][0] - rotation_z_[i][0] * translation_diff_[i][2];
+            cross_of_z_p_[2] = rotation_z_[i][0] * translation_diff_[i][1] - rotation_z_[i][1] * translation_diff_[i][0];
 
-        ROS_INFO("Generated chain of %i joints.", local_robot_chain.getNrOfJoints());
+            jacobian_[i][3] = cross_of_z_p_[0];
+            jacobian_[i][4] = cross_of_z_p_[1];
+            jacobian_[i][5] = cross_of_z_p_[2];
 
-        return local_robot_chain;
+        }
+    
 
+    }
+
+// getting current robot's transformations to compute jacobian
+    void getCurrentTFCB(const tf2_msgs::TFMessageConstPtr &tf_msg)
+    {
+        //get all 6 vectors of z = 3rd column of R matrix from quaternion
+        //get all 6 vectors of p = translational vector
+       
+        for(size_t i = 0; i<6; i++) //MAGIC number!!!
+        {
+            //2*(x*z + w*y)
+            //2*(y*z + w*x)
+            //2*(w*w + z*z)-1
+
+            rotation_z_[i][0] = 2*(tf_msg->transforms[i].transform.rotation.x * tf_msg->transforms[i].transform.rotation.z + tf_msg->transforms[i].transform.rotation.w * tf_msg->transforms[i].transform.rotation.y);
+            rotation_z_[i][1] = 2*(tf_msg->transforms[i].transform.rotation.y * tf_msg->transforms[i].transform.rotation.z + tf_msg->transforms[i].transform.rotation.w * tf_msg->transforms[i].transform.rotation.x);
+            rotation_z_[i][2] = 2*(tf_msg->transforms[i].transform.rotation.w * tf_msg->transforms[i].transform.rotation.w + tf_msg->transforms[i].transform.rotation.z * tf_msg->transforms[i].transform.rotation.z)-1;
+
+            translation_[i][0] = tf_msg->transforms[i].transform.translation.x;
+            translation_[i][1] = tf_msg->transforms[i].transform.translation.y;
+            translation_[i][2] = tf_msg->transforms[i].transform.translation.z;
+        }
+            
     }
 
 
