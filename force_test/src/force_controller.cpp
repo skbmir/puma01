@@ -156,16 +156,15 @@ public:
 
     // get wrench command
         // desired_wrench_ = as_goal->desired_wrench;
-        desired_wrench_[0] = as_goal->desired_wrench.force.x;
-        desired_wrench_[1] = as_goal->desired_wrench.force.y;
-        desired_wrench_[2] = as_goal->desired_wrench.force.z;
-        desired_wrench_[3] = as_goal->desired_wrench.torque.x;
-        desired_wrench_[4] = as_goal->desired_wrench.torque.y;
-        desired_wrench_[5] = as_goal->desired_wrench.torque.z;
+        desired_wrench_[0] = as_goal->desired_wrench.torque.x;
+        desired_wrench_[1] = as_goal->desired_wrench.torque.y;
+        desired_wrench_[2] = as_goal->desired_wrench.torque.z;
+        desired_wrench_[3] = as_goal->desired_wrench.force.x;
+        desired_wrench_[4] = as_goal->desired_wrench.force.y;
+        desired_wrench_[5] = as_goal->desired_wrench.force.z;
 
-    // compute transpose jacobian
-
-        // KDL::MultiplyJacobian(jacobian_T_, kdl_current_wrench_, kdl_tau_);  // not usable???
+    // compute jacobian   
+        getJacobian();
 
     // computing tau = J^T * F
         double time_now = ros::Time::now().toSec();
@@ -179,17 +178,17 @@ public:
 
             for(unsigned int j=0; j<6; j++)  // MAGIC number!!! but obviously, it works for 6-dof manipulators
             {
-                // tau_[i]+=jacobian_(j,i)*PI[i];
+                // tau_[i]+=jacobian_[j][i]*PI[i];
             }
 
-            info_msg_.data[i] = tau_[i];
+            // info_msg_.data[i] = tau_[i];
             as_result_.output_torques.data[i] = 0; //kdl_tau_(i);
         }
 
 
         as_result_.header = as_goal->header;
 
-        info_pub_.publish(info_msg_);
+        // info_pub_.publish(info_msg_);
 
         if(succeed)
         {   
@@ -203,12 +202,12 @@ public:
 // getting current measurements from force sensor
     void getCurrentWrenchCB(const geometry_msgs::WrenchStampedConstPtr &sensor_msg)
     {
-        wrench_[0] = sensor_msg->wrench.force.x;
-        wrench_[1] = sensor_msg->wrench.force.y;
-        wrench_[2] = sensor_msg->wrench.force.z;
-        wrench_[3] = sensor_msg->wrench.torque.x;
-        wrench_[4] = sensor_msg->wrench.torque.y;
-        wrench_[5] = sensor_msg->wrench.torque.z;
+        wrench_[0] = sensor_msg->wrench.torque.x;
+        wrench_[1] = sensor_msg->wrench.torque.y;
+        wrench_[2] = sensor_msg->wrench.torque.z;
+        wrench_[3] = sensor_msg->wrench.force.x;
+        wrench_[4] = sensor_msg->wrench.force.y;
+        wrench_[5] = sensor_msg->wrench.force.z;
 
     // filter wrench data
         for(unsigned int i = 0; i<6; i++) //MAGIC number!!
@@ -232,6 +231,8 @@ public:
 
         for(size_t i = 0; i<6; i++) 
         {
+        
+        // J_w 
             jacobian_[i][0] = rotation_z_[i][0];
             jacobian_[i][1] = rotation_z_[i][1];
             jacobian_[i][2] = rotation_z_[i][2];
@@ -248,6 +249,7 @@ public:
             cross_of_z_p_[1] = rotation_z_[i][2] * translation_diff_[i][0] - rotation_z_[i][0] * translation_diff_[i][2];
             cross_of_z_p_[2] = rotation_z_[i][0] * translation_diff_[i][1] - rotation_z_[i][1] * translation_diff_[i][0];
 
+        // J_v
             jacobian_[i][3] = cross_of_z_p_[0];
             jacobian_[i][4] = cross_of_z_p_[1];
             jacobian_[i][5] = cross_of_z_p_[2];
