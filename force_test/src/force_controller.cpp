@@ -142,7 +142,7 @@ public:
         }
         ROS_INFO("KDL Chain got from given KDL Tree.");
         
-        // robot_chain_ = generateChain();
+        // robot_chain_ = generateChain(); // generate chain from given D-H parameters
 
     // define KDL structures
         kdl_current_joint_angles_ = KDL::JntArray(6);
@@ -160,6 +160,26 @@ public:
 
         ROS_INFO("force_controller initialized.");
 
+        KDL::ChainJntToJacSolver kdl_JacSolver_ = KDL::ChainJntToJacSolver(robot_chain_);
+    
+        int solver_ret = kdl_JacSolver_.JntToJac(kdl_current_joint_angles_, jacobian_); // computing jacobian
+        if(solver_ret!=0)
+        {
+            ROS_ERROR("Failed to get jacobian. Error code: %i",solver_ret);
+        }
+
+        for(unsigned int i=0; i<6; i++)
+        {
+            for(unsigned int j=0; j<6; j++)
+            {
+                if(fabs(jacobian_(5-i,j))<0.1)
+                {
+                    jacobian_(5-i,j) = 0;
+                }
+            }
+            ROS_INFO("%i : %g %g %g %g %g %g",i,jacobian_(5-i,0),jacobian_(5-i,1),jacobian_(5-i,2),jacobian_(5-i,3),jacobian_(5-i,4),jacobian_(5-i,5));
+        }
+
         return true;
     }
 
@@ -173,7 +193,7 @@ public:
         // current_joint_angles_ = as_goal->current_joint_angles.data;
         for(std::size_t i=0; i<cartesian_parameters_names_.size(); i++)
         {
-            kdl_current_joint_angles_(i) = as_goal->current_joint_angles.data[i];
+            // kdl_current_joint_angles_(i) = as_goal->current_joint_angles.data[i];
         }
 
     // get wrench command
@@ -211,8 +231,6 @@ public:
             {
                 kdl_tau_(i)+=jacobian_(j,i)*PI[i];
             }
-
-            ROS_INFO("%i : %g %g %g %g %g %g",i,jacobian_(0,i),jacobian_(1,i),jacobian_(2,i),jacobian_(3,i),jacobian_(4,i),jacobian_(5,i));
 
             // kdl_tau_(i) *= 0.2;
 
