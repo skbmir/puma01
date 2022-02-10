@@ -284,34 +284,6 @@ public:
                 transforms_[i].mult(transforms_[i-1],local_transforms_[i]);
             }
 
-
-        // getting 3rd column (z) of rotation matrix using quaternion directly
-            //2*(x*z + w*y)
-            //2*(y*z + w*x)
-            //2*(w*w + z*z)-1
-            // rotation_z_[i][0] = 2*(tf_msg->transforms[i].transform.rotation.x * tf_msg->transforms[i].transform.rotation.z + tf_msg->transforms[i].transform.rotation.w * tf_msg->transforms[i].transform.rotation.y);
-            // rotation_z_[i][1] = 2*(tf_msg->transforms[i].transform.rotation.y * tf_msg->transforms[i].transform.rotation.z + tf_msg->transforms[i].transform.rotation.w * tf_msg->transforms[i].transform.rotation.x);
-            // rotation_z_[i][2] = 2*(tf_msg->transforms[i].transform.rotation.w * tf_msg->transforms[i].transform.rotation.w + tf_msg->transforms[i].transform.rotation.z * tf_msg->transforms[i].transform.rotation.z)-1;
-        // or using other quaternion --> it's not matter, they are equal
-            // rotation_z_[i][0] = 2*(rotation_quat_.getX() * rotation_quat_.getZ() + rotation_quat_.getW() * rotation_quat_.getY());
-            // rotation_z_[i][1] = 2*(rotation_quat_.getY() * rotation_quat_.getZ() + rotation_quat_.getW() * rotation_quat_.getX());
-            // rotation_z_[i][2] = 2*(rotation_quat_.getW() * rotation_quat_.getW() + rotation_quat_.getZ() * rotation_quat_.getZ())-1;
-
-            // rotation_mat_.setRotation(rotation_quat_);
-        // getting 3rd column from rotation matrix, generated from quaternion
-            // rotation_z_[i][0] = rotation_mat_[0][2];
-            // rotation_z_[i][1] = rotation_mat_[1][2];
-            // rotation_z_[i][2] = rotation_mat_[2][2];
-
-        // getting translation vector
-            // translation_[i][0] = tf_msg->transforms[i].transform.translation.x;
-            // translation_[i][1] = tf_msg->transforms[i].transform.translation.y;
-            // translation_[i][2] = tf_msg->transforms[i].transform.translation.z;
-
-            // ROS_INFO("T %i: %g %g %g %g",(int)i,transforms_[i].getBasis()[0][0],transforms_[i].getBasis()[0][1],transforms_[i].getBasis()[0][2],transforms_[i].getOrigin()[0]);
-            // ROS_INFO("T %i: %g %g %g %g",(int)i,transforms_[i].getBasis()[1][0],transforms_[i].getBasis()[1][1],transforms_[i].getBasis()[1][2],transforms_[i].getOrigin()[1]);         
-            // ROS_INFO("T %i: %g %g %g %g",(int)i,transforms_[i].getBasis()[2][0],transforms_[i].getBasis()[2][1],transforms_[i].getBasis()[2][2],transforms_[i].getOrigin()[2]);
-            // ROS_INFO("T %i: %i %i %i %i",(int)i,0,0,0,1);
         }
 
         getJacobian(); 
