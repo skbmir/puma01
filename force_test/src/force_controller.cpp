@@ -65,12 +65,15 @@ private:
                         tau_;
     
     std::array<std::array<double,3>,6> translation_, rotation_z_;  // sets of vectors 1x3
-    std::array<double,3> cross_of_z_p_, translation_diff_; // vectors 1x3
+    std::array<double,3> cross_of_z_p_; // vectors 1x3
 
     tf2::Quaternion rotation_quat_;
     tf2::Matrix3x3 rotation_mat_;
+    tf2::Vector3 translation_vec_, translation_diff_;
 
-    std::array<std::array<double,6>,6> jacobian_;  // jacobian 6x6
+    std::array<tf2::Transform,6> local_transforms_, transforms_;
+
+    std::array<tf2::Vector3,6> jacobian_w_, jacobian_v_;  // components of jacobian 6x6
     
     ros::Duration cycle_period_;
     double time_last_ = 0.0;
@@ -135,6 +138,12 @@ public:
 
         tf_sub_ = nh_.subscribe<tf2_msgs::TFMessage>("/tf", 1, &ForceController::getCurrentTFCB, this);
 
+        for(int i = 0; i<6; i++) //MAGIC
+        {
+            local_transforms_[i].setIdentity();
+            transforms_[i].setIdentity();
+        }
+
         // to plot info for debug
         info_pub_ = nh_.advertise<std_msgs::Float64MultiArray>("/force_control_info",1);
         info_msg_.data.resize(7);
@@ -171,7 +180,7 @@ public:
         desired_wrench_[5] = as_goal->desired_wrench.force.z;
 
     // compute jacobian   
-        getJacobian();
+        // getJacobian();
 
     // computing tau = J^T * F
         double time_now = ros::Time::now().toSec();
@@ -233,83 +242,80 @@ public:
 
     void getJacobian()
     {
-        //get J_[i,j] = z and i = rows from 0 to 2, and columns = j from 0 to 5
-        //get J_v_i = cross(z,p)
-        //form  J_
-
         for(size_t i = 0; i<6; i++) 
         {
-        
-        // J_w 
-            jacobian_[i][0] = rotation_z_[i][0];
-            jacobian_[i][1] = rotation_z_[i][1];
-            jacobian_[i][2] = rotation_z_[i][2];
+        // J_w[i] = z_i
+        // getting z_i and p_i_n = p_n - p_i 
+            jacobian_w_[i] = transforms_[i].getBasis().getColumn(2);
+            translation_diff_ = transforms_[5].getOrigin()-transforms_[i].getOrigin();
 
-            translation_diff_[0] = translation_[5][0] - translation_[i][0];
-            translation_diff_[1] = translation_[5][1] - translation_[i][1];
-            translation_diff_[2] = translation_[5][2] - translation_[i][2];
-
-        // cross product of z and p
-        // a2*b3 - a3*b2
-        // a3*b1 - a1*b3
-        // a1*b2 - a2*b1
-            cross_of_z_p_[0] = rotation_z_[i][1] * translation_diff_[2] - rotation_z_[i][2] * translation_diff_[1];
-            cross_of_z_p_[1] = rotation_z_[i][2] * translation_diff_[0] - rotation_z_[i][0] * translation_diff_[2];
-            cross_of_z_p_[2] = rotation_z_[i][0] * translation_diff_[1] - rotation_z_[i][1] * translation_diff_[0];
-
-        // J_v
-            jacobian_[i][3] = cross_of_z_p_[0];
-            jacobian_[i][4] = cross_of_z_p_[1];
-            jacobian_[i][5] = cross_of_z_p_[2];
-
+        // J_v[i] = cross(z_i, p_i_n)
+            jacobian_v_[i] = transforms_[i].getBasis().getColumn(2).cross(translation_diff_);
         }
-    
+
+        ROS_INFO("J_1: %4.4f %4.4f %4.4f %4.4f %4.4f %4.4f",jacobian_w_[0][0],jacobian_w_[1][0],jacobian_w_[2][0],jacobian_w_[3][0],jacobian_w_[4][0],jacobian_w_[5][0]);
+        ROS_INFO("J_2: %4.4f %4.4f %4.4f %4.4f %4.4f %4.4f",jacobian_w_[0][1],jacobian_w_[1][1],jacobian_w_[2][1],jacobian_w_[3][1],jacobian_w_[4][1],jacobian_w_[5][1]);
+        ROS_INFO("J_3: %4.4f %4.4f %4.4f %4.4f %4.4f %4.4f",jacobian_w_[0][2],jacobian_w_[1][2],jacobian_w_[2][2],jacobian_w_[3][2],jacobian_w_[4][2],jacobian_w_[5][2]);
+        ROS_INFO("J_4: %4.4f %4.4f %4.4f %4.4f %4.4f %4.4f",jacobian_v_[0][0],jacobian_v_[1][0],jacobian_v_[2][0],jacobian_v_[3][0],jacobian_v_[4][0],jacobian_v_[5][0]);
+        ROS_INFO("J_5: %4.4f %4.4f %4.4f %4.4f %4.4f %4.4f",jacobian_v_[0][1],jacobian_v_[1][1],jacobian_v_[2][1],jacobian_v_[3][1],jacobian_v_[4][1],jacobian_v_[5][1]);
+        ROS_INFO("J_6: %4.4f %4.4f %4.4f %4.4f %4.4f %4.4f",jacobian_v_[0][2],jacobian_v_[1][2],jacobian_v_[2][2],jacobian_v_[3][2],jacobian_v_[4][2],jacobian_v_[5][2]);
 
     }
 
 // getting current robot's transformations to compute jacobian
     void getCurrentTFCB(const tf2_msgs::TFMessageConstPtr &tf_msg)
     {
-        //get all 6 vectors of z = 3rd column of R matrix from quaternion
-        //get all 6 vectors of p = translational vector
+        //getting local transformation matrices from /tf
+        //computing transformation matrices
 
-        for(size_t i = 0; i<6; i++) //MAGIC number!!!
+        for(int i = 0; i<6; i++) //MAGIC number!!!
         {
 
-            tf2::fromMsg(tf_msg->transforms[i].transform.rotation, rotation_quat_);
+            tf2::convert(tf_msg->transforms[i].transform.rotation, rotation_quat_);
+            tf2::convert(tf_msg->transforms[i].transform.translation, translation_vec_);
 
-            rotation_mat_.setRotation(rotation_quat_);
+            local_transforms_[i].setRotation(rotation_quat_);
+            local_transforms_[i].setOrigin(translation_vec_);
 
+            if(i<1)
+            {
+                transforms_[i] = local_transforms_[i];
+            }else{
+                transforms_[i].mult(transforms_[i-1],local_transforms_[i]);
+            }
+
+
+        // getting 3rd column (z) of rotation matrix using quaternion directly
             //2*(x*z + w*y)
             //2*(y*z + w*x)
             //2*(w*w + z*z)-1
-
             // rotation_z_[i][0] = 2*(tf_msg->transforms[i].transform.rotation.x * tf_msg->transforms[i].transform.rotation.z + tf_msg->transforms[i].transform.rotation.w * tf_msg->transforms[i].transform.rotation.y);
             // rotation_z_[i][1] = 2*(tf_msg->transforms[i].transform.rotation.y * tf_msg->transforms[i].transform.rotation.z + tf_msg->transforms[i].transform.rotation.w * tf_msg->transforms[i].transform.rotation.x);
             // rotation_z_[i][2] = 2*(tf_msg->transforms[i].transform.rotation.w * tf_msg->transforms[i].transform.rotation.w + tf_msg->transforms[i].transform.rotation.z * tf_msg->transforms[i].transform.rotation.z)-1;
-
-
+        // or using other quaternion --> it's not matter, they are equal
             // rotation_z_[i][0] = 2*(rotation_quat_.getX() * rotation_quat_.getZ() + rotation_quat_.getW() * rotation_quat_.getY());
             // rotation_z_[i][1] = 2*(rotation_quat_.getY() * rotation_quat_.getZ() + rotation_quat_.getW() * rotation_quat_.getX());
             // rotation_z_[i][2] = 2*(rotation_quat_.getW() * rotation_quat_.getW() + rotation_quat_.getZ() * rotation_quat_.getZ())-1;
 
+            // rotation_mat_.setRotation(rotation_quat_);
+        // getting 3rd column from rotation matrix, generated from quaternion
             // rotation_z_[i][0] = rotation_mat_[0][2];
             // rotation_z_[i][1] = rotation_mat_[1][2];
             // rotation_z_[i][2] = rotation_mat_[2][2];
 
-            // rotation_z_[i][0] = 2*(rotation_quat_.getX() * rotation_quat_.getZ() + rotation_quat_.getW() * rotation_quat_.getY());
-            // rotation_z_[i][1] = 2*(rotation_quat_.getY() * rotation_quat_.getZ() + rotation_quat_.getW() * rotation_quat_.getX());
-            // rotation_z_[i][2] = 2*(rotation_quat_.getW() * rotation_quat_.getW() + rotation_quat_.getZ() * rotation_quat_.getZ())-1;
+        // getting translation vector
+            // translation_[i][0] = tf_msg->transforms[i].transform.translation.x;
+            // translation_[i][1] = tf_msg->transforms[i].transform.translation.y;
+            // translation_[i][2] = tf_msg->transforms[i].transform.translation.z;
 
-
-            translation_[i][0] = tf_msg->transforms[i].transform.translation.x;
-            translation_[i][1] = tf_msg->transforms[i].transform.translation.y;
-            translation_[i][2] = tf_msg->transforms[i].transform.translation.z;
-
-            // ROS_INFO("p %i: %g %g %g",(int)i,translation_[i][0],translation_[i][1],translation_[i][2]);
-            ROS_INFO("z %i: %g %g %g",(int)i,rotation_z_[i][0],rotation_z_[i][1],rotation_z_[i][2]);
+            // ROS_INFO("T %i: %g %g %g %g",(int)i,transforms_[i].getBasis()[0][0],transforms_[i].getBasis()[0][1],transforms_[i].getBasis()[0][2],transforms_[i].getOrigin()[0]);
+            // ROS_INFO("T %i: %g %g %g %g",(int)i,transforms_[i].getBasis()[1][0],transforms_[i].getBasis()[1][1],transforms_[i].getBasis()[1][2],transforms_[i].getOrigin()[1]);         
+            // ROS_INFO("T %i: %g %g %g %g",(int)i,transforms_[i].getBasis()[2][0],transforms_[i].getBasis()[2][1],transforms_[i].getBasis()[2][2],transforms_[i].getOrigin()[2]);
+            // ROS_INFO("T %i: %i %i %i %i",(int)i,0,0,0,1);
         }
-            
+
+        getJacobian(); 
+
     }
 
 
