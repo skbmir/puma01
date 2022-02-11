@@ -58,14 +58,11 @@ private:
     ros::Publisher info_pub_;
     std_msgs::Float64MultiArray info_msg_;
 
-    std::vector<double> q_, 
+    std::array<double,6> q_, 
                         wrench_, 
                         last_wrench_, last_last_wrench_, 
                         desired_wrench_, wrench_error_, 
-                        tau_;
-    
-    std::array<std::array<double,3>,6> translation_, rotation_z_;  // sets of vectors 1x3
-    std::array<double,3> cross_of_z_p_; // vectors 1x3
+                        tau_,PI;
 
     tf2::Quaternion rotation_quat_;
     tf2::Matrix3x3 rotation_mat_;
@@ -128,13 +125,13 @@ public:
 
         as_result_.output_torques.data.resize(6, 0.0);
 
-        q_.resize(6, 0.0);  // MAGIC numbers???
-        wrench_.resize(6, 0.0);
-        last_wrench_.resize(6, 0.0);
-        last_last_wrench_.resize(6, 0.0);
-        desired_wrench_.resize(6, 0.0);
-        wrench_error_.resize(6, 0.0);
-        tau_.resize(6, 0.0);
+        // q_.resize(6, 0.0);  // MAGIC numbers???
+        // wrench_.resize(6, 0.0);
+        // last_wrench_.resize(6, 0.0);
+        // last_last_wrench_.resize(6, 0.0);
+        // desired_wrench_.resize(6, 0.0);
+        // wrench_error_.resize(6, 0.0);
+        // tau_.resize(6, 0.0);
 
         tf_sub_ = nh_.subscribe<tf2_msgs::TFMessage>("/tf", 1, &ForceController::getCurrentTFCB, this);
 
@@ -158,10 +155,11 @@ public:
     void executeCB(const force_test::ForceControlGoalConstPtr &as_goal)
     {
 
-        ROS_INFO("---");
+        // ROS_INFO("---");
 
         bool succeed = true; // execution success mark
-        std::array<double,6> PI;
+
+        tau_ = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
 
     // get robot configuration
         // current_joint_angles_ = as_goal->current_joint_angles.data;
@@ -179,9 +177,6 @@ public:
         desired_wrench_[4] = as_goal->desired_wrench.force.y;
         desired_wrench_[5] = as_goal->desired_wrench.force.z;
 
-    // compute jacobian   
-        // getJacobian();
-
     // computing tau = J^T * F
         double time_now = ros::Time::now().toSec();
         cycle_period_ = ros::Duration(time_now - time_last_);
@@ -192,20 +187,20 @@ public:
             wrench_error_[i] = desired_wrench_[i]-wrench_[i]; // calculate wrench error
             PI[i] = pid_controllers_[i].computeCommand(wrench_error_[i], cycle_period_); // compute wrench PI output
 
-            for(unsigned int j=0; j<6; j++)  // MAGIC number!!! but obviously, it works for 6-dof manipulators
+            for(unsigned int j=0; j<3; j++)  // MAGIC number!!! but obviously, it works for 6-dof manipulators
             {
-                // tau_[i]+=jacobian_[j][i]*PI[i];
+                tau_[i]+=jacobian_w_[j][i]*PI[i]; // tau = J_w' * m 
+                tau_[i]+=jacobian_v_[j][i]*PI[i+3]; // tau = J_v' * f
             }
 
-            // ROS_INFO("%i : %g %g %g %g %g %g",i,jacobian_[i][0],jacobian_[i][1],jacobian_[i][2],jacobian_[i][3],jacobian_[i][4],jacobian_[i][5]);
-
-            // info_msg_.data[i] = tau_[i];
-            as_result_.output_torques.data[i] = 0; //kdl_tau_(i);
+            info_msg_.data[i] = tau_[i];
+            as_result_.output_torques.data[i] = tau_[i];
         }
 
         as_result_.header = as_goal->header;
 
-        // info_pub_.publish(info_msg_);
+        info_msg_.data[6] = wrench_[5];
+        info_pub_.publish(info_msg_);
 
         if(succeed)
         {   
@@ -229,7 +224,7 @@ public:
     // filter wrench data
         for(unsigned int i = 0; i<6; i++) //MAGIC number!!
         {
-            // wrench_[i] = fabs(wrench_[i])<0.003 ? 0 : wrench_[i];
+            // wrench_[i] = fabs(wrench_[i])<0.003 ? 0 : wrench_[i]; //saturation for very smaller values
             // if(wrench_[i] != 0)
             // {
                 wrench_[i] = (1*last_last_wrench_[i]+1*last_wrench_[i]+1*wrench_[i])/3;
@@ -253,12 +248,12 @@ public:
             jacobian_v_[i] = transforms_[i].getBasis().getColumn(2).cross(translation_diff_);
         }
 
-        ROS_INFO("J_1: %4.4f %4.4f %4.4f %4.4f %4.4f %4.4f",jacobian_w_[0][0],jacobian_w_[1][0],jacobian_w_[2][0],jacobian_w_[3][0],jacobian_w_[4][0],jacobian_w_[5][0]);
-        ROS_INFO("J_2: %4.4f %4.4f %4.4f %4.4f %4.4f %4.4f",jacobian_w_[0][1],jacobian_w_[1][1],jacobian_w_[2][1],jacobian_w_[3][1],jacobian_w_[4][1],jacobian_w_[5][1]);
-        ROS_INFO("J_3: %4.4f %4.4f %4.4f %4.4f %4.4f %4.4f",jacobian_w_[0][2],jacobian_w_[1][2],jacobian_w_[2][2],jacobian_w_[3][2],jacobian_w_[4][2],jacobian_w_[5][2]);
-        ROS_INFO("J_4: %4.4f %4.4f %4.4f %4.4f %4.4f %4.4f",jacobian_v_[0][0],jacobian_v_[1][0],jacobian_v_[2][0],jacobian_v_[3][0],jacobian_v_[4][0],jacobian_v_[5][0]);
-        ROS_INFO("J_5: %4.4f %4.4f %4.4f %4.4f %4.4f %4.4f",jacobian_v_[0][1],jacobian_v_[1][1],jacobian_v_[2][1],jacobian_v_[3][1],jacobian_v_[4][1],jacobian_v_[5][1]);
-        ROS_INFO("J_6: %4.4f %4.4f %4.4f %4.4f %4.4f %4.4f",jacobian_v_[0][2],jacobian_v_[1][2],jacobian_v_[2][2],jacobian_v_[3][2],jacobian_v_[4][2],jacobian_v_[5][2]);
+        // ROS_INFO("J_1: %4.4f %4.4f %4.4f %4.4f %4.4f %4.4f",jacobian_w_[0][0],jacobian_w_[1][0],jacobian_w_[2][0],jacobian_w_[3][0],jacobian_w_[4][0],jacobian_w_[5][0]);
+        // ROS_INFO("J_2: %4.4f %4.4f %4.4f %4.4f %4.4f %4.4f",jacobian_w_[0][1],jacobian_w_[1][1],jacobian_w_[2][1],jacobian_w_[3][1],jacobian_w_[4][1],jacobian_w_[5][1]);
+        // ROS_INFO("J_3: %4.4f %4.4f %4.4f %4.4f %4.4f %4.4f",jacobian_w_[0][2],jacobian_w_[1][2],jacobian_w_[2][2],jacobian_w_[3][2],jacobian_w_[4][2],jacobian_w_[5][2]);
+        // ROS_INFO("J_4: %4.4f %4.4f %4.4f %4.4f %4.4f %4.4f",jacobian_v_[0][0],jacobian_v_[1][0],jacobian_v_[2][0],jacobian_v_[3][0],jacobian_v_[4][0],jacobian_v_[5][0]);
+        // ROS_INFO("J_5: %4.4f %4.4f %4.4f %4.4f %4.4f %4.4f",jacobian_v_[0][1],jacobian_v_[1][1],jacobian_v_[2][1],jacobian_v_[3][1],jacobian_v_[4][1],jacobian_v_[5][1]);
+        // ROS_INFO("J_6: %4.4f %4.4f %4.4f %4.4f %4.4f %4.4f",jacobian_v_[0][2],jacobian_v_[1][2],jacobian_v_[2][2],jacobian_v_[3][2],jacobian_v_[4][2],jacobian_v_[5][2]);
 
     }
 
