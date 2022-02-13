@@ -60,7 +60,7 @@ private:
 
     std::array<double,6> q_, 
                         wrench_, 
-                        last_wrench_, last_last_wrench_, 
+                        last_wrench_, last_last_wrench_, last_last_last_wrench_, last_last_last_last_wrench_,
                         desired_wrench_, wrench_error_, 
                         tau_,PI;
 
@@ -189,8 +189,7 @@ public:
 
             for(unsigned int j=0; j<3; j++)  // MAGIC number!!! but obviously, it works for 6-dof manipulators
             {
-                tau_[i]+=jacobian_w_[j][i]*PI[i]; // tau = J_w' * m 
-                tau_[i]+=jacobian_v_[j][i]*PI[i+3]; // tau = J_v' * f
+                tau_[i] += jacobian_w_[j][i]*PI[i] + jacobian_v_[j][i]*PI[i+3]; 
             }
 
             info_msg_.data[i] = tau_[i];
@@ -227,9 +226,11 @@ public:
             // wrench_[i] = fabs(wrench_[i])<0.003 ? 0 : wrench_[i]; //saturation for very smaller values
             // if(wrench_[i] != 0)
             // {
-                wrench_[i] = (1*last_last_wrench_[i]+1*last_wrench_[i]+1*wrench_[i])/3;
-                last_last_wrench_[i] = last_wrench_[i];
-                last_wrench_[i] = wrench_[i];     
+                wrench_[i] = (last_last_last_last_wrench_[i] + last_last_last_wrench_[i] + last_last_wrench_[i]+last_wrench_[i]+wrench_[i])/5; 
+                last_last_last_last_wrench_[i] = last_last_last_wrench_[i]; 
+                last_last_last_wrench_[i] = last_last_wrench_[i]; 
+                last_last_wrench_[i] = last_wrench_[i];  
+                last_wrench_[i] = wrench_[i];   
             // }
         }
         
