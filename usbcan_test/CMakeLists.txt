@@ -26,6 +26,14 @@ target_link_libraries(usbcan_test
   ${catkin_LIBRARIES}
 )
 
+add_executable(usbcan_test_write 
+  src/usbcan_test_write.cpp
+)
+add_dependencies(usbcan_test_write ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+target_link_libraries(usbcan_test_write
+  ${catkin_LIBRARIES}
+)
+
 install(DIRECTORY include/${PROJECT_NAME}/
   DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
 )

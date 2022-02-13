@@ -1,5 +1,7 @@
 #pragma once
 #include <vector>
+#include <ros/ros.h>
+#include <std_msgs/Int32MultiArray.h>
 #include <vscan_usbcan_api/vs_can_api.h>
 
 namespace vscan_api
