@@ -105,10 +105,5 @@ bool usbcan_handle::noError()
     }
 }
 
-bool pushFrametoBuffer(UINT32 Id, UINT8 Size, UINT8 * Data, UINT8 Flags=VSCAN_FLAGS_STANDARD)
-{
-    return true;
-}
-
 
 } // namespace
