@@ -49,7 +49,7 @@ void puma01HWInterface::init()
 
 	double as_wait_timeout = 5.0;
 
-	ROS_WARN_NAMED(name_, "Waiting for force controller action server to be started in %d secs...",(int)as_wait_timeout);
+	ROS_INFO_NAMED(name_, "Waiting for force controller action server to be started in %d secs...",(int)as_wait_timeout);
 	force_controller_ac_.waitForServer(ros::Duration(as_wait_timeout)); // waiting for force controller action server to start
 	if(force_controller_ac_.isServerConnected())
 	{

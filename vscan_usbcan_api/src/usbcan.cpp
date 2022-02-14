@@ -22,29 +22,28 @@ usbcan_handle::~usbcan_handle()
 bool usbcan_handle::open(CHAR * device, DWORD mode, void * speed)
 {
     vscan_handle_ = VSCAN_Open(device, mode);   
+    vscan_status_ = vscan_handle_;
     if(vscan_handle_>0)
     {
+        ROS_INFO("[USB-CAN adapter] Successfuly connected on port %s",device);
+
+        if(mode==VSCAN_MODE_NORMAL){ROS_INFO("[USB-CAN adapter] Mode: normal");}
+        else if(mode==VSCAN_MODE_LISTEN_ONLY){ROS_INFO("[USB-CAN adapter] Mode: listen only");}
+        else if(mode==VSCAN_MODE_SELF_RECEPTION){ROS_INFO("[USB-CAN adapter] Mode: self-reception");}
+
         setSpeed(speed);
         return true;
     }else{
-        vscan_status_ = vscan_handle_;
+        ROS_ERROR("[USB-CAN adapter] Failed to connect.");
         return false;
     }
 }
 
 void usbcan_handle::close()
 {
+    ROS_INFO("[USB-CAN adapter] Shutting down connection...");
     vscan_status_ = VSCAN_Close(vscan_handle_);
 } 
-
-bool usbcan_handle::isReady()
-{
-    if(vscan_status_==VSCAN_ERR_NO_DEVICE_FOUND || vscan_status_==VSCAN_ERR_INVALID_HANDLE){
-        return false;
-    }else{
-        return true;
-    }
-}
 
 char * usbcan_handle::getStatusString()
 {
@@ -55,41 +54,41 @@ char * usbcan_handle::getStatusString()
 bool  usbcan_handle::readRequest(VSCAN_MSG * read_buffer, DWORD read_buffer_size)
 {
     vscan_status_ = VSCAN_Read(vscan_handle_, read_buffer, read_buffer_size, &actual_read_frame_number_);
-
-    if(vscan_status_!=VSCAN_ERR_OK) 
-    {
-        return false;
-    }else{
-        return true;
-    }
+    return noError();
 }
 
 bool  usbcan_handle::writeRequest(VSCAN_MSG * write_buffer, DWORD write_buffer_size)
 {
     vscan_status_ = VSCAN_Write(vscan_handle_, write_buffer, write_buffer_size, &actual_write_frame_number_);
-
-    if((vscan_status_!=VSCAN_ERR_OK)) 
-    {
-        return false;
-    }else{
-        return true;
-    }
+    return noError();
 }
 
 bool  usbcan_handle::Flush()
 {
-    if(VSCAN_Flush(vscan_handle_)!= VSCAN_ERR_OK) 
-    {
-        return false;
-    }else{
-        return true;
-    }
+    vscan_status_ = VSCAN_Flush(vscan_handle_);
+    return noError();
 }
 
 
-void usbcan_handle::setSpeed(void * speed)
+bool usbcan_handle::setSpeed(void * speed)
 {
     vscan_status_ = VSCAN_Ioctl(vscan_handle_, VSCAN_IOCTL_SET_SPEED, speed);
+    if(noError())
+    {
+        int speed_val = 0;
+        if(speed==VSCAN_SPEED_100K){speed_val = 100000;}
+        else if(speed==VSCAN_SPEED_125K){speed_val = 125000;}
+        else if(speed==VSCAN_SPEED_1M){speed_val = 1000000;}
+        else if(speed==VSCAN_SPEED_20K){speed_val = 20000;}
+        else if(speed==VSCAN_SPEED_250K){speed_val = 250000;}
+        else if(speed==VSCAN_SPEED_500K){speed_val = 500000;}
+        else if(speed==VSCAN_SPEED_50K){speed_val = 50000;}
+        else if(speed==VSCAN_SPEED_800K){speed_val = 800000;}
+        ROS_INFO("[USB-CAN adapter] CAN baudrate set: %i",speed_val);
+        return true;
+    }else{
+        return false;
+    }
 }
 
 unsigned long usbcan_handle::getActualWriteNum(){ return actual_write_frame_number_;}
@@ -101,6 +100,7 @@ bool usbcan_handle::noError()
     {
         return true;
     }else{
+        ROS_ERROR("[USB-CAN adapter] Error: %s",getStatusString());
         return false;
     }
 }

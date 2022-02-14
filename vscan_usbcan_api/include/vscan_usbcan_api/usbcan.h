@@ -18,9 +18,7 @@ public:
     bool open(CHAR * device, DWORD mode, void * speed); // open port 
     void close(); // closing port 
 
-    void setSpeed(void * speed); // set speed
-
-    bool isReady(); // 
+    bool setSpeed(void * speed); // set speed
 
     char * getStatusString();
     
