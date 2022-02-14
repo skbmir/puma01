@@ -124,36 +124,33 @@ public:
             ROS_WARN_STREAM("Reconnecting to USB-CAN adapter and opening port...");
             usbcan_handle_.open(tty_,mode_,can_baudrate_);
 
-            sleep(5);
+            sleep(5); //?????????????
         }
     }
 
-    void poscmdCB(const std_msgs::UInt32MultiArrayConstPtr &cmd);
+    void poscmdCB(const std_msgs::UInt32MultiArrayConstPtr &cmd)
+    {
+        pos_cmd_ = cmd->data[0];
+        write_buffer_[0].Data[0] = pos_cmd_>>24;
+        write_buffer_[0].Data[1] = pos_cmd_>>16;
+        write_buffer_[0].Data[2] = pos_cmd_>>8;
+        write_buffer_[0].Data[3] = pos_cmd_;
+        
+        if(usbcan_handle_.noError())
+        {        
+            if(usbcan_handle_.writeRequest(write_buffer_.data(),write_buffer_.size())) // write request
+            {       
+                if(usbcan_handle_.Flush()) // if write request SUCCESS --> it means, that write frames, stored in write buffer, were successfully wrote to CAN
+                {
+                    ROS_INFO_STREAM("Wrote command: "<< pos_cmd_);
+                }
+            }else{
+                ROS_ERROR_STREAM("Failed to WRITE data to USB-CAN adapter. Status: " << usbcan_handle_.getStatusString());
+            }
+        }
+    } 
 
 }; // class
-
-void usbcan_test_write::poscmdCB(const std_msgs::UInt32MultiArrayConstPtr &cmd)
-{
-    ROS_INFO_STREAM("Wrote command: "<< pos_cmd_);
-    pos_cmd_ = cmd->data[0];
-    write_buffer_[0].Data[0] = pos_cmd_>>24;
-    write_buffer_[0].Data[1] = pos_cmd_>>16;
-    write_buffer_[0].Data[2] = pos_cmd_>>8;
-    write_buffer_[0].Data[3] = pos_cmd_;
-    
-    if(usbcan_handle_.noError())
-    {        
-        if(usbcan_handle_.writeRequest(write_buffer_.data(),write_buffer_.size())) // write request
-        {       
-            if(usbcan_handle_.Flush()) // if write request SUCCESS --> it means, that write frames, stored in write buffer, were successfully wrote to CAN
-            {
-                ROS_INFO_STREAM("Wrote command: "<< pos_cmd_);
-            }
-        }else{
-            ROS_ERROR_STREAM("Failed to WRITE data to USB-CAN adapter. Status: " << usbcan_handle_.getStatusString());
-        }
-    }
-} 
 
 int main(int argc, char **argv)
 {

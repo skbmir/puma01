@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.0.2)
-project(force_test)
+project(puma01_force)
 
 # add_compile_options(-std=c++11)
 
@@ -51,7 +51,7 @@ generate_messages(
 
 catkin_package(
 #  INCLUDE_DIRS include
-#  LIBRARIES force_test
+#  LIBRARIES puma01_force
   CATKIN_DEPENDS 
     actionlib_msgs
 #  DEPENDS system_lib
@@ -64,7 +64,7 @@ include_directories(
 )
 
 # add_library(${PROJECT_NAME}
-#   src/${PROJECT_NAME}/force_test.cpp
+#   src/${PROJECT_NAME}/puma01_force.cpp
 # )
 
 # add_dependencies(${PROJECT_NAME} ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})

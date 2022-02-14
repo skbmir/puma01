@@ -176,7 +176,7 @@ void puma01HWInterface::SimJointStatesCB(const sensor_msgs::JointState::ConstPtr
 	}
 }
 
-void puma01HWInterface::force_controller_ac_DoneCB(const actionlib::SimpleClientGoalState &state, const force_test::ForceControlResultConstPtr &result)
+void puma01HWInterface::force_controller_ac_DoneCB(const actionlib::SimpleClientGoalState &state, const puma01_force::ForceControlResultConstPtr &result)
 {
 	for(std::size_t i=0; i<num_joints_; i++)
 	{

@@ -1,7 +1,0 @@
-<launch>
-
-    <rosparam file="$(find force_test)/config/force_controller_config.yaml" command="load"/>
-
-    <node name="force_controller" pkg="force_test" type="force_controller" output="screen"/> 
-
-</launch>

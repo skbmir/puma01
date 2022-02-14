@@ -1,0 +1,7 @@
+<launch>
+
+    <rosparam file="$(find puma01_force)/config/force_controller_config.yaml" command="load"/>
+
+    <node name="force_controller" pkg="puma01_force" type="force_controller" output="screen"/> 
+
+</launch>

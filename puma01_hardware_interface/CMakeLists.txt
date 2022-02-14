@@ -19,7 +19,7 @@ find_package(catkin REQUIRED COMPONENTS
   urdf
   actionlib_msgs 
   actionlib
-  force_test
+  puma01_force
 )
 
 catkin_package(

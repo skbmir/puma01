@@ -1,4 +1,4 @@
-#include <force_test/ForceControlAction.h>  
+#include <puma01_force/ForceControlAction.h>  
 #include <actionlib/server/simple_action_server.h>
 
 #include <geometry_msgs/Wrench.h>
@@ -23,8 +23,8 @@ private:
 
     ros::NodeHandle nh_; // = ros::NodeHandle("force_controller");
 
-    actionlib::SimpleActionServer<force_test::ForceControlAction> action_server_;
-    force_test::ForceControlResult as_result_;
+    actionlib::SimpleActionServer<puma01_force::ForceControlAction> action_server_;
+    puma01_force::ForceControlResult as_result_;
 
     // geometry_msgs::Wrench p_gains_,i_gains_; // using wrench structure to store gains is more intuitive
 
@@ -152,7 +152,7 @@ public:
     }
 
 // taking goal from action client (hardware_interface in puma01) and performing control cycle action
-    void executeCB(const force_test::ForceControlGoalConstPtr &as_goal)
+    void executeCB(const puma01_force::ForceControlGoalConstPtr &as_goal)
     {
 
         // ROS_INFO("---");
