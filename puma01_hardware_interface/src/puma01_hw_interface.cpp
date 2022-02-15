@@ -76,20 +76,24 @@ void puma01HWInterface::wrench_command_CB(const geometry_msgs::Wrench& wrench)
 
 void puma01HWInterface::read(ros::Duration& elapsed_time)
 {
-	if(!force_controller_ac_.isServerConnected())
+
+
+	if(force_controller_ac_.isServerConnected())
 	{
-		force_controller_ac_.waitForServer();
-		if(force_controller_ac_.isServerConnected())
-		{
-			ROS_INFO_NAMED(name_, "Connection with force controller established.");
-		}
+
+		force_controller_goal_.current_joint_angles.data = joint_position_; // actual joint positions
+		force_controller_goal_.desired_wrench = wrench_command_; // desired wrench
+
+		force_controller_ac_.sendGoal(force_controller_goal_, boost::bind(&puma01_hw_interface_ns::puma01HWInterface::force_controller_ac_DoneCB, this, _1, _2));
+
+	}else{
+		// wait force_controller action server to appear for 10 ms
+	// 	force_controller_ac_.waitForServer(ros::Duration(0.01));
+	// 	if(force_controller_ac_.isServerConnected())
+	// 	{
+	// 		ROS_INFO_NAMED(name_, "Connection with force controller established.");
+	// 	}
 	}
-
-	force_controller_goal_.current_joint_angles.data = joint_position_; // actual joint positions
-	force_controller_goal_.desired_wrench = wrench_command_; // desired wrench
-
-	force_controller_ac_.sendGoal(force_controller_goal_, boost::bind(&puma01_hw_interface_ns::puma01HWInterface::force_controller_ac_DoneCB, this, _1, _2));
-
 }
 
 void puma01HWInterface::write(ros::Duration& elapsed_time)
