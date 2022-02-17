@@ -103,8 +103,6 @@ public:
             //     {
             //         // ROS_INFO_STREAM("Wrote command: "<< pos_cmd_);
             //     }
-            // }else{
-            //     ROS_ERROR_STREAM("Failed to WRITE data to USB-CAN adapter. Status: " << usbcan_handle_.getStatusString());
             // }
 
         }else{
