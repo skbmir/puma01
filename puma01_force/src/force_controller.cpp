@@ -47,7 +47,6 @@ private:
 
     // geometry_msgs::WrenchStamped current_wrench_;
     // geometry_msgs::Wrench desired_wrench_; 
-    std::vector<double> current_joint_angles_;
     int joints_number_ = 6; // default value, for puma01 
 
     ros::Subscriber sensor_sub_, tf_sub_;
@@ -58,22 +57,22 @@ private:
     ros::Publisher info_pub_;
     std_msgs::Float64MultiArray info_msg_;
 
-    std::array<double,6> q_, 
-                        wrench_, 
-                        last_wrench_, last_last_wrench_, last_last_last_wrench_, last_last_last_last_wrench_,
-                        desired_wrench_, wrench_error_, 
-                        tau_,PI;
+    std::array<double,6>    q_, 
+                            wrench_, 
+                            last_wrench_, last_last_wrench_, last_last_last_wrench_, last_last_last_last_wrench_,
+                            desired_wrench_, wrench_error_, 
+                            tau_,PI;
 
     tf2::Quaternion rotation_quat_;
-    tf2::Matrix3x3 rotation_mat_;
-    tf2::Vector3 translation_vec_, translation_diff_;
+    tf2::Matrix3x3  rotation_mat_;
+    tf2::Vector3    translation_vec_, translation_diff_, force_, projected_force_;
 
-    std::array<tf2::Transform,6> local_transforms_, transforms_;
+    std::array<tf2::Transform,6>    local_transforms_, transforms_;
 
-    std::array<tf2::Vector3,6> jacobian_w_, jacobian_v_;  // components of jacobian 6x6
+    std::array<tf2::Vector3,6>  jacobian_w_, jacobian_v_;  // components of jacobian 6x6
     
-    ros::Duration cycle_period_;
-    double time_last_ = 0.0;
+    ros::Duration   cycle_period_;
+    double  time_last_ = 0.0;
 
 
 public:
@@ -103,9 +102,6 @@ public:
 
         // ROS_INFO("Loaded URDF.");
 
-    // resizing current joint angles vector after getting the number of joints
-        current_joint_angles_.resize(joints_number_,0.0);
-
     // init PID
         pid_controllers_.resize(cartesian_parameters_names_.size());
 
@@ -123,17 +119,10 @@ public:
 
         sensor_sub_ = nh_.subscribe<geometry_msgs::WrenchStamped>("/puma01_sim/ft_sensor", 1, &ForceController::getCurrentWrenchCB, this);
 
-        as_result_.output_torques.data.resize(6, 0.0);
-
-        // q_.resize(6, 0.0);  // MAGIC numbers???
-        // wrench_.resize(6, 0.0);
-        // last_wrench_.resize(6, 0.0);
-        // last_last_wrench_.resize(6, 0.0);
-        // desired_wrench_.resize(6, 0.0);
-        // wrench_error_.resize(6, 0.0);
-        // tau_.resize(6, 0.0);
-
         tf_sub_ = nh_.subscribe<tf2_msgs::TFMessage>("/tf", 1, &ForceController::getCurrentTFCB, this);
+
+    // allocate data
+        as_result_.output_torques.data.resize(6, 0.0); 
 
         for(int i = 0; i<6; i++) //MAGIC
         {
@@ -141,7 +130,7 @@ public:
             transforms_[i].setIdentity();
         }
 
-        // to plot info for debug
+    // to plot info for debug
         info_pub_ = nh_.advertise<std_msgs::Float64MultiArray>("/force_control_info",1);
         info_msg_.data.resize(7);
 
@@ -182,19 +171,19 @@ public:
         cycle_period_ = ros::Duration(time_now - time_last_);
         time_last_ = time_now; 
 
-        for(unsigned int i=0; i<cartesian_parameters_names_.size(); i++)
-        {
-            wrench_error_[i] = desired_wrench_[i]-wrench_[i]; // calculate wrench error
-            PI[i] = pid_controllers_[i].computeCommand(wrench_error_[i], cycle_period_); // compute wrench PI output
+        // for(unsigned int i=0; i<cartesian_parameters_names_.size(); i++)
+        // {
+        //     wrench_error_[i] = desired_wrench_[i]-wrench_[i]; // calculate wrench error
+        //     PI[i] = pid_controllers_[i].computeCommand(wrench_error_[i], cycle_period_); // compute wrench PI output
 
-            for(unsigned int j=0; j<3; j++)  // MAGIC number!!! but obviously, it works for 6-dof manipulators
-            {
-                tau_[i] += jacobian_w_[j][i]*PI[i] + jacobian_v_[j][i]*PI[i+3]; 
-            }
+        //     for(unsigned int j=0; j<3; j++)  // MAGIC number!!! but obviously, it works for 6-dof manipulators
+        //     {
+        //         tau_[i] += jacobian_w_[j][i]*PI[i] + jacobian_v_[j][i]*PI[i+3]; 
+        //     }
 
-            info_msg_.data[i] = tau_[i];
-            as_result_.output_torques.data[i] = tau_[i];
-        }
+        //     info_msg_.data[i] = tau_[i];
+        //     as_result_.output_torques.data[i] = tau_[i];
+        // }
 
         as_result_.header = as_goal->header;
 
@@ -220,6 +209,12 @@ public:
         wrench_[4] = sensor_msg->wrench.force.y;
         wrench_[5] = sensor_msg->wrench.force.z;
 
+        force_[0] = sensor_msg->wrench.force.x;
+        force_[1] = sensor_msg->wrench.force.y;
+        force_[2] = sensor_msg->wrench.force.z;
+
+        projected_force_ = local_transforms_[5].getBasis()*force_;
+
     // filter wrench data
         for(unsigned int i = 0; i<6; i++) //MAGIC number!!
         {
@@ -233,29 +228,28 @@ public:
                 last_wrench_[i] = wrench_[i];   
             // }
         }
-        
     }
 
     void getJacobian()
     {
-        for(size_t i = 0; i<6; i++) 
+        for(size_t i = 0; i<6; i++)  // MAGIC number!!
         {
         // J_w[i] = z_i
         // getting z_i and p_i_n = p_n - p_i 
-            jacobian_w_[i] = transforms_[i].getBasis().getColumn(2);
+            jacobian_w_[i] = transforms_[i].getBasis().getColumn(2); // jacobian for angular velocity
             translation_diff_ = transforms_[5].getOrigin()-transforms_[i].getOrigin();
 
         // J_v[i] = cross(z_i, p_i_n)
-            jacobian_v_[i] = transforms_[i].getBasis().getColumn(2).cross(translation_diff_);
+            jacobian_v_[i] = transforms_[i].getBasis().getColumn(2).cross(translation_diff_); // jacobian for linear velocity
         }
 
+        // printf jacobian in terminal
         // ROS_INFO("J_1: %4.4f %4.4f %4.4f %4.4f %4.4f %4.4f",jacobian_w_[0][0],jacobian_w_[1][0],jacobian_w_[2][0],jacobian_w_[3][0],jacobian_w_[4][0],jacobian_w_[5][0]);
         // ROS_INFO("J_2: %4.4f %4.4f %4.4f %4.4f %4.4f %4.4f",jacobian_w_[0][1],jacobian_w_[1][1],jacobian_w_[2][1],jacobian_w_[3][1],jacobian_w_[4][1],jacobian_w_[5][1]);
         // ROS_INFO("J_3: %4.4f %4.4f %4.4f %4.4f %4.4f %4.4f",jacobian_w_[0][2],jacobian_w_[1][2],jacobian_w_[2][2],jacobian_w_[3][2],jacobian_w_[4][2],jacobian_w_[5][2]);
         // ROS_INFO("J_4: %4.4f %4.4f %4.4f %4.4f %4.4f %4.4f",jacobian_v_[0][0],jacobian_v_[1][0],jacobian_v_[2][0],jacobian_v_[3][0],jacobian_v_[4][0],jacobian_v_[5][0]);
         // ROS_INFO("J_5: %4.4f %4.4f %4.4f %4.4f %4.4f %4.4f",jacobian_v_[0][1],jacobian_v_[1][1],jacobian_v_[2][1],jacobian_v_[3][1],jacobian_v_[4][1],jacobian_v_[5][1]);
         // ROS_INFO("J_6: %4.4f %4.4f %4.4f %4.4f %4.4f %4.4f",jacobian_v_[0][2],jacobian_v_[1][2],jacobian_v_[2][2],jacobian_v_[3][2],jacobian_v_[4][2],jacobian_v_[5][2]);
-
     }
 
 // getting current robot's transformations to compute jacobian
@@ -267,12 +261,15 @@ public:
         for(int i = 0; i<6; i++) //MAGIC number!!!
         {
 
+        // converting TF msg to tf2 objects
             tf2::convert(tf_msg->transforms[i].transform.rotation, rotation_quat_);
             tf2::convert(tf_msg->transforms[i].transform.translation, translation_vec_);
 
+        // get local transforms
             local_transforms_[i].setRotation(rotation_quat_);
             local_transforms_[i].setOrigin(translation_vec_);
 
+        // get global transforms
             if(i<1)
             {
                 transforms_[i] = local_transforms_[i];
@@ -282,8 +279,8 @@ public:
 
         }
 
+    // getting jacobian after we got global transforms
         getJacobian(); 
-
     }
 
 

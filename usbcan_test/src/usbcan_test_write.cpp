@@ -37,12 +37,12 @@ public:
         read_buff_size_ = 10;
         write_buff_size_ = 1;
 
-        pos_cmd_ = 2000;
+        pos_cmd_;
         enc_ = 0;
         pot_ = 0;
 
         read_buffer_.resize(read_buff_size_);
-        write_buffer_.resize(write_buff_size_);
+        // write_buffer_.resize(write_buff_size_);
 
         VSCAN_MSG cmd_frame;
         cmd_frame.Id = 0x002;

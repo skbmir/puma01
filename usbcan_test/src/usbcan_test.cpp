@@ -90,7 +90,7 @@ int main(int argc, char **argv)
 
     // test_write_buffer.push_back(system_err);
 
-    ros::Rate rate(0.5);
+    ros::Rate rate(1000);
 
     while (ros::ok())
     {
@@ -98,14 +98,14 @@ int main(int argc, char **argv)
         {
         
     // write request
-            if(usbcan_handle.writeRequest(test_write_buffer.data(),test_write_buffer.size()))
-            {
-                // if write request SUCCESS --> it means, that write frames, stored in write buffer, were successfully wrote to CAN
-                if(usbcan_handle.Flush())
-                {
-                    ROS_INFO_STREAM("Wrote "<< usbcan_handle.getActualWriteNum() <<" CAN-frames!");
-                }
-            }
+            // if(usbcan_handle.writeRequest(test_write_buffer.data(),test_write_buffer.size()))
+            // {
+            //     // if write request SUCCESS --> it means, that write frames, stored in write buffer, were successfully wrote to CAN
+            //     if(usbcan_handle.Flush())
+            //     {
+            //         ROS_INFO_STREAM("Wrote "<< usbcan_handle.getActualWriteNum() <<" CAN-frames!");
+            //     }
+            // }
 
             // sleep(0.1);
 
@@ -115,17 +115,17 @@ int main(int argc, char **argv)
                 // if read request SUCCESS --> frames, read from CAN, store in read buffer
                 if(usbcan_handle.getActualReadNum()>0)
                 {
-                    ROS_INFO_STREAM("Read " << usbcan_handle.getActualReadNum() << " CAN-frames.");
+                    // ROS_INFO_STREAM("Read " << usbcan_handle.getActualReadNum() << " CAN-frames.");
                     for(VSCAN_MSG read_msg : test_read_buffer)
                     {
-                        ROS_INFO("Got CAN-frame with ID: %03x, Data: %02x %02x %02x %02x %02x %02x %02x %02x", read_msg.Id, read_msg.Data[0], read_msg.Data[1], read_msg.Data[2], read_msg.Data[3], read_msg.Data[4], read_msg.Data[5], read_msg.Data[6], read_msg.Data[7]);
+                        // ROS_INFO("Got CAN-frame with ID: %03x, Data: %02x %02x %02x %02x %02x %02x %02x %02x", read_msg.Id, read_msg.Data[0], read_msg.Data[1], read_msg.Data[2], read_msg.Data[3], read_msg.Data[4], read_msg.Data[5], read_msg.Data[6], read_msg.Data[7]);
                         if(read_msg.Id==0x002)
                         {
                             pot = read_msg.Data[0]<<24 | read_msg.Data[1]<<16 | read_msg.Data[2]<<8 | read_msg.Data[3];
                             enc = read_msg.Data[4]<<24 | read_msg.Data[5]<<16 | read_msg.Data[6]<<8 | read_msg.Data[7];
                             motor_pos_msg.data[0] = pot;
                             motor_pos_msg.data[1] = enc;
-                            ROS_INFO("enc: %i, pot: %i", enc, pot);
+                            // ROS_INFO("enc: %i, pot: %i", enc, pot);
                             pos_pub.publish(motor_pos_msg);
                         }
                     }
