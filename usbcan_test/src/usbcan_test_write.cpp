@@ -31,8 +31,6 @@ public:
     void init(ros::NodeHandle &nh, char * tty, DWORD mode, void * can_baudrate) 
     {
 
-        tty_ = new char[sizeof(tty)];
-        tty_ = strcpy(tty_, tty);
         can_baudrate_ = can_baudrate;
         mode_ = mode;
 
@@ -63,15 +61,8 @@ public:
         info_msg_.data.resize(2,0);
 
     // open CAN port
-        ROS_INFO_STREAM("Connecting to USB-CAN adapter and opening port...");
-
-        // you can use VSCAN_FIRST_FOUND instead tty
-        if(!usbcan_handle_.open(tty,mode,can_baudrate))
-        {
-            ROS_ERROR_STREAM("Failed to connect to USB-CAN adapter and open port! Status: " << usbcan_handle_.getStatusString());
-        }else{
-            ROS_INFO_STREAM("Successfuly connected to USB-CAN adapter and opened port! Status: " << usbcan_handle_.getStatusString());
-        }
+    // you can use VSCAN_FIRST_FOUND instead tty
+        usbcan_handle_.open(tty,mode,can_baudrate);
 
     }
 
@@ -104,8 +95,6 @@ public:
                         info_pub_.publish(info_msg_);
                     }
                 }
-            }else{
-                ROS_ERROR_STREAM("Failed to READ data from USB-CAN adapter. Status: " << usbcan_handle_.getStatusString());
             }
    
             // if(usbcan_handle_.writeRequest(write_buffer_.data(),write_buffer_.size())) // write request
@@ -119,11 +108,8 @@ public:
             // }
 
         }else{
-            ROS_ERROR_STREAM("Error detected: " << usbcan_handle_.getStatusString());
-            
             ROS_WARN_STREAM("Reconnecting to USB-CAN adapter and opening port...");
-            usbcan_handle_.open(tty_,mode_,can_baudrate_);
-
+            usbcan_handle_.open(VSCAN_FIRST_FOUND,mode_,can_baudrate_);
             sleep(5); //?????????????
         }
     }
@@ -144,8 +130,6 @@ public:
                 {
                     ROS_INFO_STREAM("Wrote command: "<< pos_cmd_);
                 }
-            }else{
-                ROS_ERROR_STREAM("Failed to WRITE data to USB-CAN adapter. Status: " << usbcan_handle_.getStatusString());
             }
         }
     } 
@@ -169,21 +153,15 @@ int main(int argc, char **argv)
             if(!strcmp(argv[2],"listen"))
             {
                 mode = VSCAN_MODE_LISTEN_ONLY;
-                ROS_INFO("Adapter mode: listen.");
             }else if(!strcmp(argv[2],"self")){
                 mode = VSCAN_MODE_SELF_RECEPTION;
-                ROS_INFO("Adapter mode: self-reception.");
             }
-        }else{
-            ROS_INFO("Adapter mode: normal.");
         }
     }else{
         tty = new char[devname.length()+1];
         strcpy(tty,devname.c_str());
-        ROS_INFO("Adapter mode: normal.");
     }
 
-    ROS_INFO("Choosed port: %s.", tty);
 
     ros::init(argc, argv, n_name);
 
@@ -193,7 +171,7 @@ int main(int argc, char **argv)
 
     sleep(0.05);
 
-    usbcan_test_write_inst.init(nh, tty, VSCAN_MODE_NORMAL, VSCAN_SPEED_500K);
+    usbcan_test_write_inst.init(nh, tty, mode, can_baudrate);
 
     ros::Rate rate(20);
 

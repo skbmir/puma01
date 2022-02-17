@@ -73,7 +73,7 @@ int main(int argc, char **argv)
     uint32_t enc = 0, pot = 0;
 
     VSCAN_MSG test_frame;
-    test_frame.Id = 0x123;
+    test_frame.Id = 0x12fff;
     test_frame.Size = 4;
     test_frame.Flags = VSCAN_FLAGS_STANDARD;
     test_frame.Data[0] = test_value>>24;
@@ -84,13 +84,13 @@ int main(int argc, char **argv)
     test_write_buffer.push_back(test_frame);
 
     VSCAN_MSG system_err;
-    system_err.Id = 0x2ff;
+    system_err.Id = 0x7ff;
     system_err.Size = 0;
     system_err.Flags = VSCAN_FLAGS_REMOTE;
 
-    test_write_buffer.push_back(system_err);
+    // test_write_buffer.push_back(system_err);
 
-    ros::Rate rate(10);
+    ros::Rate rate(0.5);
 
     while (ros::ok())
     {
@@ -98,16 +98,14 @@ int main(int argc, char **argv)
         {
         
     // write request
-            // if(usbcan_handle.writeRequest(test_write_buffer.data(),test_write_buffer.size()))
-            // {
-            //     // if write request SUCCESS --> it means, that write frames, stored in write buffer, were successfully wrote to CAN
-            //     if(usbcan_handle.Flush())
-            //     {
-            //         ROS_INFO_STREAM("Wrote "<< usbcan_handle.getActualWriteNum() <<" CAN-frames!");
-            //     }
-            // }else{
-            //     ROS_ERROR_STREAM("Failed to WRITE data to USB-CAN adapter.");
-            // }
+            if(usbcan_handle.writeRequest(test_write_buffer.data(),test_write_buffer.size()))
+            {
+                // if write request SUCCESS --> it means, that write frames, stored in write buffer, were successfully wrote to CAN
+                if(usbcan_handle.Flush())
+                {
+                    ROS_INFO_STREAM("Wrote "<< usbcan_handle.getActualWriteNum() <<" CAN-frames!");
+                }
+            }
 
             // sleep(0.1);
 
@@ -120,9 +118,9 @@ int main(int argc, char **argv)
                     ROS_INFO_STREAM("Read " << usbcan_handle.getActualReadNum() << " CAN-frames.");
                     for(VSCAN_MSG read_msg : test_read_buffer)
                     {
+                        ROS_INFO("Got CAN-frame with ID: %03x, Data: %02x %02x %02x %02x %02x %02x %02x %02x", read_msg.Id, read_msg.Data[0], read_msg.Data[1], read_msg.Data[2], read_msg.Data[3], read_msg.Data[4], read_msg.Data[5], read_msg.Data[6], read_msg.Data[7]);
                         if(read_msg.Id==0x002)
                         {
-                            ROS_INFO("Got CAN-frame with ID: %03x, Data: %02x %02x %02x %02x %02x %02x %02x %02x", read_msg.Id, read_msg.Data[0], read_msg.Data[1], read_msg.Data[2], read_msg.Data[3], read_msg.Data[4], read_msg.Data[5], read_msg.Data[6], read_msg.Data[7]);
                             pot = read_msg.Data[0]<<24 | read_msg.Data[1]<<16 | read_msg.Data[2]<<8 | read_msg.Data[3];
                             enc = read_msg.Data[4]<<24 | read_msg.Data[5]<<16 | read_msg.Data[6]<<8 | read_msg.Data[7];
                             motor_pos_msg.data[0] = pot;
