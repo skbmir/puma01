@@ -1,5 +1,5 @@
 #include <vscan_usbcan_api/usbcan.h>
-#include <std_msgs/UInt32MultiArray.h>
+#include <std_msgs/Int32MultiArray.h>
 
 
 class usbcan_test_write
@@ -8,7 +8,7 @@ private:
     ros::Publisher info_pub_;
     ros::Subscriber pos_cmd_sub_;
 
-    std_msgs::UInt32MultiArray info_msg_;
+    std_msgs::Int32MultiArray info_msg_;
 
     int read_buff_size_,
         write_buff_size_;
@@ -22,7 +22,7 @@ private:
     std::vector<VSCAN_MSG> read_buffer_;
     std::vector<VSCAN_MSG> write_buffer_;
 
-    uint32_t pos_cmd_, enc_, pot_;
+    int pos_cmd_, enc_, pot_, rot_dir_;
 
 public:
     usbcan_test_write() {}
@@ -37,25 +37,27 @@ public:
         read_buff_size_ = 10;
         write_buff_size_ = 1;
 
-        pos_cmd_;
+        pos_cmd_ = 0;
         enc_ = 0;
         pot_ = 0;
+        rot_dir_ = 0;
 
         read_buffer_.resize(read_buff_size_);
         // write_buffer_.resize(write_buff_size_);
 
         VSCAN_MSG cmd_frame;
         cmd_frame.Id = 0x002;
-        cmd_frame.Size = 4;
+        cmd_frame.Size = 5;
         cmd_frame.Flags = VSCAN_FLAGS_STANDARD;
         cmd_frame.Data[0] = pos_cmd_>>24;
         cmd_frame.Data[1] = pos_cmd_>>16;
         cmd_frame.Data[2] = pos_cmd_>>8;
         cmd_frame.Data[3] = pos_cmd_;
+        cmd_frame.Data[4] = rot_dir_;
 
         write_buffer_.push_back(cmd_frame);
 
-        info_pub_ = nh.advertise<std_msgs::UInt32MultiArray>("/motor_pos",1);
+        info_pub_ = nh.advertise<std_msgs::Int32MultiArray>("/motor_pos",1);
         pos_cmd_sub_ = nh.subscribe("/motor_pos_cmd",1,&usbcan_test_write::poscmdCB,this);  
 
         info_msg_.data.resize(2,0);
@@ -112,14 +114,23 @@ public:
         }
     }
 
-    void poscmdCB(const std_msgs::UInt32MultiArrayConstPtr &cmd)
+    void poscmdCB(const std_msgs::Int32MultiArrayConstPtr &cmd)
     {
-        pos_cmd_ = cmd->data[0];
+        pos_cmd_ = abs(cmd->data[0]);
+
+        if(cmd->data[0]<0)
+        {
+            rot_dir_ = 1;
+        }else{
+            rot_dir_ = 0;
+        }
+
         write_buffer_[0].Data[0] = pos_cmd_>>24;
         write_buffer_[0].Data[1] = pos_cmd_>>16;
         write_buffer_[0].Data[2] = pos_cmd_>>8;
         write_buffer_[0].Data[3] = pos_cmd_;
-        
+        write_buffer_[0].Data[4] = rot_dir_;
+
         if(usbcan_handle_.noError())
         {        
             if(usbcan_handle_.writeRequest(write_buffer_.data(),write_buffer_.size())) // write request
@@ -171,13 +182,13 @@ int main(int argc, char **argv)
 
     usbcan_test_write_inst.init(nh, tty, mode, can_baudrate);
 
-    ros::Rate rate(20);
+    ros::Rate rate(1000);
 
     while (ros::ok())
     {
         
         usbcan_test_write_inst.loop();
-        rate.sleep();
+        // rate.sleep();
         ros::spinOnce();
     }
 
