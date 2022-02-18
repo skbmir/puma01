@@ -137,7 +137,7 @@ public:
             {       
                 if(usbcan_handle_.Flush()) // if write request SUCCESS --> it means, that write frames, stored in write buffer, were successfully wrote to CAN
                 {
-                    ROS_INFO_STREAM("Wrote command: "<< pos_cmd_);
+                    // ROS_INFO_STREAM("Wrote command: "<< pos_cmd_);
                 }
             }
         }
