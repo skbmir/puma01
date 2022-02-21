@@ -171,23 +171,30 @@ public:
         cycle_period_ = ros::Duration(time_now - time_last_);
         time_last_ = time_now; 
 
+        for(unsigned int i=0; i<cartesian_parameters_names_.size(); i++)
+        {
+            for(unsigned int j=0; j<3; j++)  // MAGIC number!!! but obviously, it works for 6-dof manipulators
+            {
+                wrench_error_[j+3] = desired_wrench_[j+3]-projected_force_[j]; // calculate wrench error
+                PI[i] = pid_controllers_[i].computeCommand(wrench_error_[i], cycle_period_); // compute wrench PI output
+                tau_[i] += jacobian_w_[j][i]*PI[i] + jacobian_v_[j][i]*PI[i+3]; 
+            }
+
+            info_msg_.data[i] = tau_[i];
+            as_result_.output_torques.data[i] = tau_[i];
+        }
+
+        // wrench_error_[5] = desired_wrench_[5]-projected_force_[1]; // calculate wrench error
+        // PI[5] = pid_controllers_[5].computeCommand(wrench_error_[5], cycle_period_); // compute wrench PI output
+
         // for(unsigned int i=0; i<cartesian_parameters_names_.size(); i++)
         // {
-        //     wrench_error_[i] = desired_wrench_[i]-wrench_[i]; // calculate wrench error
-        //     PI[i] = pid_controllers_[i].computeCommand(wrench_error_[i], cycle_period_); // compute wrench PI output
-
-        //     for(unsigned int j=0; j<3; j++)  // MAGIC number!!! but obviously, it works for 6-dof manipulators
-        //     {
-        //         tau_[i] += jacobian_w_[j][i]*PI[i] + jacobian_v_[j][i]*PI[i+3]; 
-        //     }
-
-        //     info_msg_.data[i] = tau_[i];
+        //     tau_[i] += jacobian_v_[2][i]*PI[5]; 
         //     as_result_.output_torques.data[i] = tau_[i];
         // }
 
         as_result_.header = as_goal->header;
 
-        info_msg_.data[6] = wrench_[5];
         info_pub_.publish(info_msg_);
 
         if(succeed)
@@ -202,32 +209,37 @@ public:
 // getting current measurements from force sensor
     void getCurrentWrenchCB(const geometry_msgs::WrenchStampedConstPtr &sensor_msg)
     {
-        wrench_[0] = sensor_msg->wrench.torque.x;
-        wrench_[1] = sensor_msg->wrench.torque.y;
-        wrench_[2] = sensor_msg->wrench.torque.z;
-        wrench_[3] = sensor_msg->wrench.force.x;
-        wrench_[4] = sensor_msg->wrench.force.y;
-        wrench_[5] = sensor_msg->wrench.force.z;
-
-        force_[0] = sensor_msg->wrench.force.x;
-        force_[1] = sensor_msg->wrench.force.y;
-        force_[2] = sensor_msg->wrench.force.z;
-
-        projected_force_ = local_transforms_[5].getBasis()*force_;
+        last_wrench_[0] = sensor_msg->wrench.torque.x;
+        last_wrench_[1] = sensor_msg->wrench.torque.y;
+        last_wrench_[2] = sensor_msg->wrench.torque.z;
+        last_wrench_[3] = sensor_msg->wrench.force.x;
+        last_wrench_[4] = sensor_msg->wrench.force.y;
+        last_wrench_[5] = sensor_msg->wrench.force.z;
 
     // filter wrench data
         for(unsigned int i = 0; i<6; i++) //MAGIC number!!
         {
             // wrench_[i] = fabs(wrench_[i])<0.003 ? 0 : wrench_[i]; //saturation for very smaller values
             // if(wrench_[i] != 0)
-            // {
-                wrench_[i] = (last_last_last_last_wrench_[i] + last_last_last_wrench_[i] + last_last_wrench_[i]+last_wrench_[i]+wrench_[i])/5; 
-                last_last_last_last_wrench_[i] = last_last_last_wrench_[i]; 
-                last_last_last_wrench_[i] = last_last_wrench_[i]; 
-                last_last_wrench_[i] = last_wrench_[i];  
-                last_wrench_[i] = wrench_[i];   
+            // { 
+            last_last_last_last_wrench_[i] = last_last_last_wrench_[i]; 
+            last_last_last_wrench_[i] = last_last_wrench_[i]; 
+            last_last_wrench_[i] = last_wrench_[i];  
+            // last_wrench_[i] = wrench_[i];   
+            wrench_[i] = (last_last_last_last_wrench_[i] + last_last_last_wrench_[i] + last_last_wrench_[i]+last_wrench_[i])/4; 
             // }
         }
+
+        force_[0] = wrench_[3];
+        force_[1] = wrench_[4];
+        force_[2] = wrench_[5];
+
+        projected_force_ = local_transforms_[5].getBasis()*force_;
+
+        info_msg_.data[0] = projected_force_[0];
+        info_msg_.data[1] = projected_force_[1];
+        info_msg_.data[2] = projected_force_[2];
+
     }
 
     void getJacobian()
@@ -244,12 +256,13 @@ public:
         }
 
         // printf jacobian in terminal
-        // ROS_INFO("J_1: %4.4f %4.4f %4.4f %4.4f %4.4f %4.4f",jacobian_w_[0][0],jacobian_w_[1][0],jacobian_w_[2][0],jacobian_w_[3][0],jacobian_w_[4][0],jacobian_w_[5][0]);
-        // ROS_INFO("J_2: %4.4f %4.4f %4.4f %4.4f %4.4f %4.4f",jacobian_w_[0][1],jacobian_w_[1][1],jacobian_w_[2][1],jacobian_w_[3][1],jacobian_w_[4][1],jacobian_w_[5][1]);
-        // ROS_INFO("J_3: %4.4f %4.4f %4.4f %4.4f %4.4f %4.4f",jacobian_w_[0][2],jacobian_w_[1][2],jacobian_w_[2][2],jacobian_w_[3][2],jacobian_w_[4][2],jacobian_w_[5][2]);
-        // ROS_INFO("J_4: %4.4f %4.4f %4.4f %4.4f %4.4f %4.4f",jacobian_v_[0][0],jacobian_v_[1][0],jacobian_v_[2][0],jacobian_v_[3][0],jacobian_v_[4][0],jacobian_v_[5][0]);
-        // ROS_INFO("J_5: %4.4f %4.4f %4.4f %4.4f %4.4f %4.4f",jacobian_v_[0][1],jacobian_v_[1][1],jacobian_v_[2][1],jacobian_v_[3][1],jacobian_v_[4][1],jacobian_v_[5][1]);
-        // ROS_INFO("J_6: %4.4f %4.4f %4.4f %4.4f %4.4f %4.4f",jacobian_v_[0][2],jacobian_v_[1][2],jacobian_v_[2][2],jacobian_v_[3][2],jacobian_v_[4][2],jacobian_v_[5][2]);
+        ROS_INFO("J_1: %4.4f %4.4f %4.4f %4.4f %4.4f %4.4f",jacobian_w_[0][0],jacobian_w_[1][0],jacobian_w_[2][0],jacobian_w_[3][0],jacobian_w_[4][0],jacobian_w_[5][0]);
+        ROS_INFO("J_2: %4.4f %4.4f %4.4f %4.4f %4.4f %4.4f",jacobian_w_[0][1],jacobian_w_[1][1],jacobian_w_[2][1],jacobian_w_[3][1],jacobian_w_[4][1],jacobian_w_[5][1]);
+        ROS_INFO("J_3: %4.4f %4.4f %4.4f %4.4f %4.4f %4.4f",jacobian_w_[0][2],jacobian_w_[1][2],jacobian_w_[2][2],jacobian_w_[3][2],jacobian_w_[4][2],jacobian_w_[5][2]);
+        ROS_INFO("J_4: %4.4f %4.4f %4.4f %4.4f %4.4f %4.4f",jacobian_v_[0][0],jacobian_v_[1][0],jacobian_v_[2][0],jacobian_v_[3][0],jacobian_v_[4][0],jacobian_v_[5][0]);
+        ROS_INFO("J_5: %4.4f %4.4f %4.4f %4.4f %4.4f %4.4f",jacobian_v_[0][1],jacobian_v_[1][1],jacobian_v_[2][1],jacobian_v_[3][1],jacobian_v_[4][1],jacobian_v_[5][1]);
+        ROS_INFO("J_6: %4.4f %4.4f %4.4f %4.4f %4.4f %4.4f",jacobian_v_[0][2],jacobian_v_[1][2],jacobian_v_[2][2],jacobian_v_[3][2],jacobian_v_[4][2],jacobian_v_[5][2]);
+
     }
 
 // getting current robot's transformations to compute jacobian
