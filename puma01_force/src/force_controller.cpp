@@ -175,12 +175,12 @@ public:
         {
             for(unsigned int j=0; j<3; j++)  // MAGIC number!!! but obviously, it works for 6-dof manipulators
             {
-                wrench_error_[j+3] = desired_wrench_[j+3]-projected_force_[j]; // calculate wrench error
+                wrench_error_[j+3] = desired_wrench_[j+3]-force_[j]; // calculate wrench error
                 PI[i] = pid_controllers_[i].computeCommand(wrench_error_[i], cycle_period_); // compute wrench PI output
                 tau_[i] += jacobian_w_[j][i]*PI[i] + jacobian_v_[j][i]*PI[i+3]; 
             }
 
-            info_msg_.data[i] = tau_[i];
+            // info_msg_.data[i] = tau_[i];
             as_result_.output_torques.data[i] = tau_[i];
         }
 
@@ -234,11 +234,12 @@ public:
         force_[1] = wrench_[4];
         force_[2] = wrench_[5];
 
-        projected_force_ = local_transforms_[5].getBasis()*force_;
-
-        info_msg_.data[0] = projected_force_[0];
-        info_msg_.data[1] = projected_force_[1];
-        info_msg_.data[2] = projected_force_[2];
+        tf2::quatRotate(local_transforms_[5].getRotation(), force_);
+        // projected_force_ = local_transforms_[5].getBasis()*force_;
+ 
+        info_msg_.data[0] = force_[0];
+        info_msg_.data[1] = force_[1];
+        info_msg_.data[2] = force_[2];
 
     }
 
@@ -256,12 +257,12 @@ public:
         }
 
         // printf jacobian in terminal
-        ROS_INFO("J_1: %4.4f %4.4f %4.4f %4.4f %4.4f %4.4f",jacobian_w_[0][0],jacobian_w_[1][0],jacobian_w_[2][0],jacobian_w_[3][0],jacobian_w_[4][0],jacobian_w_[5][0]);
-        ROS_INFO("J_2: %4.4f %4.4f %4.4f %4.4f %4.4f %4.4f",jacobian_w_[0][1],jacobian_w_[1][1],jacobian_w_[2][1],jacobian_w_[3][1],jacobian_w_[4][1],jacobian_w_[5][1]);
-        ROS_INFO("J_3: %4.4f %4.4f %4.4f %4.4f %4.4f %4.4f",jacobian_w_[0][2],jacobian_w_[1][2],jacobian_w_[2][2],jacobian_w_[3][2],jacobian_w_[4][2],jacobian_w_[5][2]);
-        ROS_INFO("J_4: %4.4f %4.4f %4.4f %4.4f %4.4f %4.4f",jacobian_v_[0][0],jacobian_v_[1][0],jacobian_v_[2][0],jacobian_v_[3][0],jacobian_v_[4][0],jacobian_v_[5][0]);
-        ROS_INFO("J_5: %4.4f %4.4f %4.4f %4.4f %4.4f %4.4f",jacobian_v_[0][1],jacobian_v_[1][1],jacobian_v_[2][1],jacobian_v_[3][1],jacobian_v_[4][1],jacobian_v_[5][1]);
-        ROS_INFO("J_6: %4.4f %4.4f %4.4f %4.4f %4.4f %4.4f",jacobian_v_[0][2],jacobian_v_[1][2],jacobian_v_[2][2],jacobian_v_[3][2],jacobian_v_[4][2],jacobian_v_[5][2]);
+        // ROS_INFO("J_1: %4.4f %4.4f %4.4f %4.4f %4.4f %4.4f",jacobian_w_[0][0],jacobian_w_[1][0],jacobian_w_[2][0],jacobian_w_[3][0],jacobian_w_[4][0],jacobian_w_[5][0]);
+        // ROS_INFO("J_2: %4.4f %4.4f %4.4f %4.4f %4.4f %4.4f",jacobian_w_[0][1],jacobian_w_[1][1],jacobian_w_[2][1],jacobian_w_[3][1],jacobian_w_[4][1],jacobian_w_[5][1]);
+        // ROS_INFO("J_3: %4.4f %4.4f %4.4f %4.4f %4.4f %4.4f",jacobian_w_[0][2],jacobian_w_[1][2],jacobian_w_[2][2],jacobian_w_[3][2],jacobian_w_[4][2],jacobian_w_[5][2]);
+        // ROS_INFO("J_4: %4.4f %4.4f %4.4f %4.4f %4.4f %4.4f",jacobian_v_[0][0],jacobian_v_[1][0],jacobian_v_[2][0],jacobian_v_[3][0],jacobian_v_[4][0],jacobian_v_[5][0]);
+        // ROS_INFO("J_5: %4.4f %4.4f %4.4f %4.4f %4.4f %4.4f",jacobian_v_[0][1],jacobian_v_[1][1],jacobian_v_[2][1],jacobian_v_[3][1],jacobian_v_[4][1],jacobian_v_[5][1]);
+        // ROS_INFO("J_6: %4.4f %4.4f %4.4f %4.4f %4.4f %4.4f",jacobian_v_[0][2],jacobian_v_[1][2],jacobian_v_[2][2],jacobian_v_[3][2],jacobian_v_[4][2],jacobian_v_[5][2]);
 
     }
 

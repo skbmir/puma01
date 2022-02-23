@@ -63,14 +63,14 @@ void puma01HWInterface::init()
 void puma01HWInterface::wrench_command_CB(const geometry_msgs::Wrench& wrench)
 { 
 	// define Goal for force controller
-	wrench_command_.force.x = wrench.force.x;
-	wrench_command_.force.y = wrench.force.y;
-	wrench_command_.force.z = wrench.force.z;
 	wrench_command_.torque.x = wrench.torque.x;
 	wrench_command_.torque.y = wrench.torque.y;
 	wrench_command_.torque.z = wrench.torque.z;
+	wrench_command_.force.x = wrench.force.x;
+	wrench_command_.force.y = wrench.force.y;
+	wrench_command_.force.z = wrench.force.z;
 
-	ROS_INFO_NAMED(name_, "Got new wrench command.");
+	ROS_INFO_NAMED(name_, "Got new wrench command: fz = %4.4f",wrench_command_.force.z);
 	
 }
 
