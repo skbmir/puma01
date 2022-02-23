@@ -173,10 +173,13 @@ public:
 
         for(unsigned int i=0; i<cartesian_parameters_names_.size(); i++)
         {
+            if(i>2)
+            {
+                wrench_error_[i] = desired_wrench_[i]-force_[i-3]; // calculate wrench error, only for force term
+            }
+            PI[i] = pid_controllers_[i].computeCommand(wrench_error_[i], cycle_period_); // compute wrench PI output
             for(unsigned int j=0; j<3; j++)  // MAGIC number!!! but obviously, it works for 6-dof manipulators
             {
-                wrench_error_[j+3] = desired_wrench_[j+3]-force_[j]; // calculate wrench error
-                PI[i] = pid_controllers_[i].computeCommand(wrench_error_[i], cycle_period_); // compute wrench PI output
                 tau_[i] += jacobian_w_[j][i]*PI[i] + jacobian_v_[j][i]*PI[i+3]; 
             }
 
