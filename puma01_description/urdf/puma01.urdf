@@ -5,26 +5,27 @@
 <!-- LINKS -->
   <link name="world"/> 
   <joint name="link_link0" type="fixed">
-    <origin xyz="0.0 0.0 0.0" rpy="1.57079632679 0.0 3.14"/>
+    <!-- <origin xyz="0.0 0.0 0.0" rpy="1.57079632679 0.0 3.14"/> -->
+    <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
     <parent link="world"/>
     <child link="link0"/>
   </joint>
 
   <link name="link0">
     <visual>
-      <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
+      <origin xyz="0.0 0.0 0.0" rpy="1.57079632679 0.0 3.14"/>
       <geometry>
         <mesh filename="package://puma01_description/meshes/link0.dae"/>
       </geometry>
     </visual>
     <collision>
-      <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
+      <origin xyz="0.0 0.0 0.0" rpy="1.57079632679 0.0 3.14"/>
       <geometry>
         <mesh filename="package://puma01_description/meshes/link0.dae"/>
       </geometry>
     </collision>
     <inertial>
-      <origin xyz="0.0  0.1925 -0.0219"/>
+      <origin xyz="0.0  0.1925 -0.0219" rpy="1.57079632679 0.0 3.14"/>
       <mass value="30.0"/>
       <inertia ixx="1.045642" ixy="0.0" ixz="0.0"  iyy="0.305407" iyz="-0.042116" izz="0.958215"/>
     </inertial>
@@ -173,7 +174,7 @@
 
 <!-- JOINTS -->    
   <joint name="joint_1" type="revolute">
-    <origin xyz="0.0  0.62357 0.0 " rpy="-1.57079632679 -1.57079632679 0.0"/>
+    <origin xyz="0.0  0.0 0.62357" rpy="0.0 0.0 0.0"/>
     <parent link="link0"/>
     <child link="link1"/>
     <axis xyz="0.0 0.0 1.0"/>
