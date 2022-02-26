@@ -150,12 +150,12 @@ public:
 
         tau_ = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
 
-    // get robot configuration
+    // get robot configuration, NO NEED cause of using /tf for computing jacobian
         // current_joint_angles_ = as_goal->current_joint_angles.data;
-        for(std::size_t i=0; i<cartesian_parameters_names_.size(); i++)
-        {
-            q_[i] = as_goal->current_joint_angles.data[i];
-        }
+        // for(std::size_t i=0; i<cartesian_parameters_names_.size(); i++)
+        // {
+        //     q_[i] = as_goal->current_joint_angles.data[i];
+        // }
 
     // get wrench command
         // desired_wrench_ = as_goal->desired_wrench;
@@ -171,19 +171,28 @@ public:
         cycle_period_ = ros::Duration(time_now - time_last_);
         time_last_ = time_now; 
 
-        for(unsigned int i=0; i<cartesian_parameters_names_.size(); i++)
+        for(unsigned int i=0; i<6; i++)  // MAGIC number!!!!!!!!!!!!1
         {
             if(i>2)
             {
                 wrench_error_[i] = desired_wrench_[i]-force_[i-3]; // calculate wrench error, only for force term
             }
             PI[i] = pid_controllers_[i].computeCommand(wrench_error_[i], cycle_period_); // compute wrench PI output
-            for(unsigned int j=0; j<3; j++)  // MAGIC number!!! but obviously, it works for 6-dof manipulators
-            {
-                tau_[i] += jacobian_w_[j][i]*PI[i] + jacobian_v_[j][i]*PI[i+3]; 
-            }
+            // for(unsigned int j=0; j<3; j++)  // MAGIC number!!! but obviously, it works for 6-dof manipulators
+            // {
+            //     tau_[i] += jacobian_w_[j][i]*desired_wrench_[j] + jacobian_v_[j][i]*desired_wrench_[j+3]; 
+            // }
 
-            // info_msg_.data[i] = tau_[i];
+
+            // tau_[i] = jacobian_w_[i][0]*desired_wrench_[0] + jacobian_w_[i][1]*desired_wrench_[1] + jacobian_w_[i][2]*desired_wrench_[2]; // no need in torque control
+            tau_[i] += jacobian_v_[i][0]*PI[3] + jacobian_v_[i][1]*PI[4] + jacobian_v_[i][2]*PI[5];
+
+            // if(fabs(tau_[i])<0.1)
+            // {
+            //     tau_[i] = 0.0;
+            // }
+
+            info_msg_.data[i] = wrench_error_[i];
             as_result_.output_torques.data[i] = tau_[i];
         }
 

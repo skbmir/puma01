@@ -70,7 +70,7 @@ void puma01HWInterface::wrench_command_CB(const geometry_msgs::Wrench& wrench)
 	wrench_command_.force.y = wrench.force.y;
 	wrench_command_.force.z = wrench.force.z;
 
-	ROS_INFO_NAMED(name_, "Got new wrench command: fz = %4.4f",wrench_command_.force.z);
+	// ROS_INFO_NAMED(name_, "Got new wrench command: fz = %4.4f",wrench_command_.force.z);
 	
 }
 

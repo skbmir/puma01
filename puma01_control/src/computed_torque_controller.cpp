@@ -190,6 +190,10 @@ namespace puma01_controllers
 
 			derr[i] = dq_desired_[i] - joints_[i].getVelocity();
 
+    // sum PID error with force_controller's output
+      err[i] += tau_compensate_[i];
+      // derr[i] += tau_compensate_[i];
+
 			PD[i] = pid_controllers_[i].computeCommand(err[i], derr[i], period);
 
     }
@@ -207,7 +211,7 @@ namespace puma01_controllers
 
       //M_ddq[i] = PD[i]+ddq_desired_[i];
 
-			cmd_effort = M_ddq[i] + G[i] + C[i] + tau_compensate_[i];  
+			cmd_effort = M_ddq[i] + G[i] + C[i];  
 
       enforceEffLimits(cmd_effort, i); 
 
