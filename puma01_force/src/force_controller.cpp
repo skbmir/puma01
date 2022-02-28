@@ -192,7 +192,7 @@ public:
             //     tau_[i] = 0.0;
             // }
 
-            info_msg_.data[i] = wrench_error_[i];
+            // info_msg_.data[i] = wrench_error_[i];
             as_result_.output_torques.data[i] = tau_[i];
         }
 
