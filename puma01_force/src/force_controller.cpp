@@ -12,6 +12,8 @@
 
 #include <urdf/model.h>
 
+#include <ros/callback_queue.h>
+#include <ros/callback_queue_interface.h>
 
 namespace puma01_controllers
 {
@@ -23,30 +25,13 @@ private:
 
     ros::NodeHandle nh_; // = ros::NodeHandle("force_controller");
 
-    actionlib::SimpleActionServer<puma01_force::ForceControlAction> action_server_;
+    actionlib::SimpleActionServer<puma01_force::ForceControlAction> action_server_; 
     puma01_force::ForceControlResult as_result_;
-
-    // geometry_msgs::Wrench p_gains_,i_gains_; // using wrench structure to store gains is more intuitive
-
-// structure to store cartesian gains for wrench control
-    struct gains
-    {
-        struct force
-        {
-            struct x {double p = .0, i = .0;};
-            struct y : x {};
-            struct z : y {};
-        };
-        struct torque : force {};
-    };
 
     std::vector<std::string> cartesian_parameters_names_;
 
-// PID
-    std::vector<control_toolbox::Pid> pid_controllers_;
+    std::vector<control_toolbox::Pid> pid_controllers_; // PID
 
-    // geometry_msgs::WrenchStamped current_wrench_;
-    // geometry_msgs::Wrench desired_wrench_; 
     int joints_number_ = 6; // default value, for puma01 
 
     ros::Subscriber sensor_sub_, tf_sub_;
@@ -74,6 +59,8 @@ private:
     ros::Duration   cycle_period_;
     double  time_last_ = 0.0;
 
+    boost::shared_ptr<ros::AsyncSpinner> ft_sensor_spinner_, tf_spinner_; // AsyncSpinners for /tf and "/wrench" subscribers
+    ros::CallbackQueue tf_queue_, ft_sensor_queue_;
 
 public:
     ForceController(std::string action_name) : action_name_(action_name), action_server_(nh_, action_name, boost::bind(&ForceController::executeCB, this, _1), false)
@@ -83,31 +70,24 @@ public:
         init();
     }
 
-    ~ForceController(){}
+    ~ForceController()
+    {
+        tf_spinner_.reset();
+        ft_sensor_spinner_.reset();
+    }
 
     bool init()
     {  
 
-        // cartesian_parameters_names_.resize(6);
+    // names of cartesian PIDs
         cartesian_parameters_names_ = {"torque_x", "torque_y", "torque_z","force_x", "force_y", "force_z"};
 
-    // no need to load URDF while using /tf topic
-    // get URDF from Parameter Server
-        // urdf::Model urdf;
-        // if (!urdf.initParamWithNodeHandle("robot_description", nh_))
-        // {
-        //     ROS_ERROR("Failed to parse URDF file.");
-        //     return false;
-        // }
-
-        // ROS_INFO("Loaded URDF.");
-
-    // init PID
+    // init PIDs
         pid_controllers_.resize(cartesian_parameters_names_.size());
 
         for(std::size_t i=0; i<cartesian_parameters_names_.size(); i++)
         {
-        // Load PID Controller using gains set on parameter server
+        // Load PIDs controllers using gains set on parameter server
             if (!pid_controllers_[i].init(ros::NodeHandle(nh_,  action_name_ + "/" + cartesian_parameters_names_[i] + "/pid")))
             {
                 ROS_ERROR_STREAM("Failed to load PID parameters from " << action_name_ + "/" + cartesian_parameters_names_[i] + "/pid");
@@ -117,9 +97,39 @@ public:
 
         ROS_INFO("PID controllers initialised.");
 
-        sensor_sub_ = nh_.subscribe<geometry_msgs::WrenchStamped>("/puma01_sim/ft_sensor", 1, &ForceController::getCurrentWrenchCB, this);
+    // initialise subscriber /tf
+        ros::SubscribeOptions tf_subscriber_options =
+            ros::SubscribeOptions::create<tf2_msgs::TFMessage>(
+            "/tf", // topic name
+            1, // queue length
+            boost::bind(&puma01_controllers::ForceController::getCurrentTFCB,this,_1), // callback
+            ros::VoidPtr(), // tracked object, we don't need one thus NULL
+            &tf_queue_ // pointer to callback queue object
+            );
 
-        tf_sub_ = nh_.subscribe<tf2_msgs::TFMessage>("/tf", 1, &ForceController::getCurrentTFCB, this);
+    // initialise subscriber /puma01_sim/ft_sensor
+        ros::SubscribeOptions ft_sensor_subscriber_options =
+            ros::SubscribeOptions::create<geometry_msgs::WrenchStamped>(
+            "/puma01_sim/ft_sensor", // topic name
+            1, // queue length
+            boost::bind(&puma01_controllers::ForceController::getCurrentWrenchCB,this,_1), // callback
+            ros::VoidPtr(), // tracked object, we don't need one thus NULL
+            &ft_sensor_queue_ // pointer to callback queue object
+            );
+
+        tf_sub_ = nh_.subscribe(tf_subscriber_options);
+        sensor_sub_ = nh_.subscribe(ft_sensor_subscriber_options);
+
+    // standart definition of subscribers
+        // tf_sub_ = nh_.subscribe<tf2_msgs::TFMessage>("/tf", 1, &ForceController::getCurrentTFCB, this); 
+        // sensor_sub_ = nh_.subscribe<geometry_msgs::WrenchStamped>("/puma01_sim/ft_sensor", 1, &ForceController::getCurrentWrenchCB, this);
+
+    // reset ans start AsyncSpinners for subscribers' callbacks
+        tf_spinner_.reset(new ros::AsyncSpinner(1, &tf_queue_));
+        ft_sensor_spinner_.reset(new ros::AsyncSpinner(1, &ft_sensor_queue_));
+
+        tf_spinner_->start();
+        ft_sensor_spinner_->start();
 
     // allocate data
         as_result_.output_torques.data.resize(6, 0.0); 
@@ -136,19 +146,18 @@ public:
 
         ROS_INFO("force_controller initialized.");
 
-
         return true;
     }
 
 // taking goal from action client (hardware_interface in puma01) and performing control cycle action
     void executeCB(const puma01_force::ForceControlGoalConstPtr &as_goal)
     {
-
-        // ROS_INFO("---");
+        
+        ROS_INFO("Executing goal.");
 
         bool succeed = true; // execution success mark
 
-        tau_ = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
+        tau_ = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0}; // zeroing force_controller output
 
     // get robot configuration, NO NEED cause of using /tf for computing jacobian
         // current_joint_angles_ = as_goal->current_joint_angles.data;
@@ -173,42 +182,40 @@ public:
 
         for(unsigned int i=0; i<6; i++)  // MAGIC number!!!!!!!!!!!!1
         {
-            if(i>2)
+        
+        // calculate wrench error, only for force term
+            if(i>2) 
             {
-                wrench_error_[i] = desired_wrench_[i]-force_[i-3]; // calculate wrench error, only for force term
+                wrench_error_[i] = desired_wrench_[i]-force_[i-3]; 
             }
+
+        // compute PI output
             PI[i] = pid_controllers_[i].computeCommand(wrench_error_[i], cycle_period_); // compute wrench PI output
+
+        // compute tau = J^T * F
             // for(unsigned int j=0; j<3; j++)  // MAGIC number!!! but obviously, it works for 6-dof manipulators
             // {
-            //     tau_[i] += jacobian_w_[j][i]*desired_wrench_[j] + jacobian_v_[j][i]*desired_wrench_[j+3]; 
+            //     tau_[i] += jacobian_w_[j][i]*wrench_error_[j] + jacobian_v_[j][i]*wrench_error_[j+3]; 
             // }
 
-
+        // shortened version of  tau = J^T * F
             // tau_[i] = jacobian_w_[i][0]*desired_wrench_[0] + jacobian_w_[i][1]*desired_wrench_[1] + jacobian_w_[i][2]*desired_wrench_[2]; // no need in torque control
             tau_[i] += jacobian_v_[i][0]*PI[3] + jacobian_v_[i][1]*PI[4] + jacobian_v_[i][2]*PI[5];
 
-            // if(fabs(tau_[i])<0.1)
-            // {
-            //     tau_[i] = 0.0;
-            // }
-
+        // to plot info data
             // info_msg_.data[i] = wrench_error_[i];
+
+        // set action result
             as_result_.output_torques.data[i] = tau_[i];
+
         }
-
-        // wrench_error_[5] = desired_wrench_[5]-projected_force_[1]; // calculate wrench error
-        // PI[5] = pid_controllers_[5].computeCommand(wrench_error_[5], cycle_period_); // compute wrench PI output
-
-        // for(unsigned int i=0; i<cartesian_parameters_names_.size(); i++)
-        // {
-        //     tau_[i] += jacobian_v_[2][i]*PI[5]; 
-        //     as_result_.output_torques.data[i] = tau_[i];
-        // }
 
         as_result_.header = as_goal->header;
 
+    // to plot info data
         info_pub_.publish(info_msg_);
 
+    // check force_controller operation success
         if(succeed)
         {   
             // ROS_INFO("Sent result back.");
@@ -221,6 +228,9 @@ public:
 // getting current measurements from force sensor
     void getCurrentWrenchCB(const geometry_msgs::WrenchStampedConstPtr &sensor_msg)
     {
+
+        ROS_INFO("Got current wrench.");
+
         last_wrench_[0] = sensor_msg->wrench.torque.x;
         last_wrench_[1] = sensor_msg->wrench.torque.y;
         last_wrench_[2] = sensor_msg->wrench.torque.z;
@@ -228,7 +238,7 @@ public:
         last_wrench_[4] = sensor_msg->wrench.force.y;
         last_wrench_[5] = sensor_msg->wrench.force.z;
 
-    // filter wrench data
+        // filter wrench data
         for(unsigned int i = 0; i<6; i++) //MAGIC number!!
         {
             // wrench_[i] = fabs(wrench_[i])<0.003 ? 0 : wrench_[i]; //saturation for very smaller values
@@ -255,6 +265,7 @@ public:
 
     }
 
+    // getting jacobian after we got global transforms
     void getJacobian()
     {
         for(size_t i = 0; i<6; i++)  // MAGIC number!!
@@ -278,9 +289,12 @@ public:
 
     }
 
-// getting current robot's transformations to compute jacobian
+    // getting current robot's transformations to compute jacobian
     void getCurrentTFCB(const tf2_msgs::TFMessageConstPtr &tf_msg)
     {
+
+        ROS_INFO("Got current transform.");
+
         //getting local transformation matrices from /tf
         //computing transformation matrices
 
@@ -305,8 +319,15 @@ public:
 
         }
 
-    // getting jacobian after we got global transforms
-        getJacobian(); 
+        getJacobian();  
+
+    }
+
+    // invoking callback queues' callbacks
+    void loop() 
+    {
+        // tf_queue_.callOne();
+        // ft_sensor_queue_.callOne();
     }
 
 
@@ -320,6 +341,11 @@ int main(int argc, char** argv)
 
     puma01_controllers::ForceController force_controller(ros::this_node::getName());
 
-    ros::spin();
+    while(ros::ok())
+    {
+        force_controller.loop();
+        ros::spinOnce();
+    }
+
     return 0;
 } // main
