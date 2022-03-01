@@ -1,13 +1,15 @@
 
 #include <puma01_hardware_interface/puma01_hw_interface.h>
 
-// ROS parameter loading
-#include <rosparam_shortcuts/rosparam_shortcuts.h>
+
 
 namespace puma01_hw_interface_ns
 {
 puma01HWInterface::puma01HWInterface(ros::NodeHandle& nh, urdf::Model* urdf_model)
- 	 : ros_control_boilerplate::GenericHWInterface(nh, urdf_model), name_("puma01_hw_interface"), force_controller_ac_("force_controller", true)
+ 	 : 	ros_control_boilerplate::GenericHWInterface(nh, urdf_model), 
+	  	name_("puma01_hw_interface"), 
+		force_controller_ac_("force_controller", true),
+		force_control_ac_connected_(false)
 {
 	// for simulation
 	sim_joint_states_sub_ = nh.subscribe("/puma01_sim/joint_states",1,&puma01HWInterface::SimJointStatesCB,this);
@@ -54,6 +56,7 @@ void puma01HWInterface::init()
 	if(force_controller_ac_.isServerConnected())
 	{
 		ROS_INFO_NAMED(name_, "Connection with force controller established.");
+		force_control_ac_connected_ = true;
 	}else{
 		ROS_ERROR_NAMED(name_, "No force_controller with action interface found! Ignoring.");
 	}
@@ -93,6 +96,15 @@ void puma01HWInterface::read(ros::Duration& elapsed_time)
 	// 	{
 	// 		ROS_INFO_NAMED(name_, "Connection with force controller established.");
 	// 	}
+		if(force_control_ac_connected_)
+		{
+			for(std::size_t i=0; i<num_joints_; i++)
+			{
+				joint_effort_command_[i] = 0.0;			
+			}	
+			force_control_ac_connected_ = false;
+			ROS_WARN("Force controller connection lost!");
+		}	
 	}
 }
 

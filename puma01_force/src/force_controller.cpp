@@ -153,7 +153,7 @@ public:
     void executeCB(const puma01_force::ForceControlGoalConstPtr &as_goal)
     {
         
-        ROS_INFO("Executing goal.");
+        // ROS_INFO("Executing goal.");
 
         bool succeed = true; // execution success mark
 
@@ -229,7 +229,7 @@ public:
     void getCurrentWrenchCB(const geometry_msgs::WrenchStampedConstPtr &sensor_msg)
     {
 
-        ROS_INFO("Got current wrench.");
+        // ROS_INFO("Got current wrench.");
 
         last_wrench_[0] = sensor_msg->wrench.torque.x;
         last_wrench_[1] = sensor_msg->wrench.torque.y;
@@ -293,7 +293,7 @@ public:
     void getCurrentTFCB(const tf2_msgs::TFMessageConstPtr &tf_msg)
     {
 
-        ROS_INFO("Got current transform.");
+        // ROS_INFO("Got current transform.");
 
         //getting local transformation matrices from /tf
         //computing transformation matrices

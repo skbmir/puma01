@@ -63,6 +63,8 @@ protected:
 	ForceControllerActionClient force_controller_ac_; // action client for force_controller
 	puma01_force::ForceControlGoal force_controller_goal_;
 
+	bool force_control_ac_connected_;
+
 };  // class
 
 }  // namespace 
