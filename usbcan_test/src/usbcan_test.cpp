@@ -1,4 +1,5 @@
 #include <vscan_usbcan_api/usbcan.h>
+#include <std_msgs/Int32MultiArray.h>
 
 int main(int argc, char **argv)
 {
@@ -76,10 +77,11 @@ int main(int argc, char **argv)
     test_frame.Id = 0x12fff;
     test_frame.Size = 4;
     test_frame.Flags = VSCAN_FLAGS_STANDARD;
-    test_frame.Data[0] = test_value>>24;
-    test_frame.Data[1] = test_value>>16;
-    test_frame.Data[2] = test_value>>8;
-    test_frame.Data[3] = test_value;
+    // test_frame.Data[0] = test_value>>24;
+    // test_frame.Data[1] = test_value>>16;
+    // test_frame.Data[2] = test_value>>8;
+    // test_frame.Data[3] = test_value;
+    usbcan_handle.wrapMsgData(test_frame,test_value);
 
     test_write_buffer.push_back(test_frame);
 
@@ -118,7 +120,7 @@ int main(int argc, char **argv)
                     // ROS_INFO_STREAM("Read " << usbcan_handle.getActualReadNum() << " CAN-frames.");
                     for(VSCAN_MSG read_msg : test_read_buffer)
                     {
-                        ROS_INFO("Got CAN-frame with ID: %03x, Data: %02x %02x %02x %02x %02x %02x %02x %02x", read_msg.Id, read_msg.Data[0], read_msg.Data[1], read_msg.Data[2], read_msg.Data[3], read_msg.Data[4], read_msg.Data[5], read_msg.Data[6], read_msg.Data[7]);
+                        // ROS_INFO("Got CAN-frame with ID: %03x, Data: %02x %02x %02x %02x %02x %02x %02x %02x", read_msg.Id, read_msg.Data[0], read_msg.Data[1], read_msg.Data[2], read_msg.Data[3], read_msg.Data[4], read_msg.Data[5], read_msg.Data[6], read_msg.Data[7]);
                         if(read_msg.Id==0x004)
                         {
                             pot = usbcan_handle.getDatafromMsg(read_msg);

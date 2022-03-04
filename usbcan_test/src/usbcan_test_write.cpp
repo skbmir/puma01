@@ -1,5 +1,5 @@
 #include <vscan_usbcan_api/usbcan.h>
-#include <std_msgs/Int32MultiArray.h>
+#include <std_msgs/UInt32MultiArray.h>
 
 
 class usbcan_test_write
@@ -8,7 +8,7 @@ private:
     ros::Publisher info_pub_;
     ros::Subscriber pos_cmd_sub_;
 
-    std_msgs::Int32MultiArray info_msg_;
+    std_msgs::UInt32MultiArray info_msg_;
 
     int read_buff_size_,
         write_buff_size_;
@@ -22,7 +22,8 @@ private:
     std::vector<VSCAN_MSG> read_buffer_;
     std::vector<VSCAN_MSG> write_buffer_;
 
-    int pos_cmd_, enc_, pot_, rot_dir_;
+    int rot_dir_;
+    uint32_t pos_cmd_, enc_, pot_;
 
 public:
     usbcan_test_write() {}
@@ -47,17 +48,18 @@ public:
 
         VSCAN_MSG cmd_frame;
         cmd_frame.Id = 0x002;
-        cmd_frame.Size = 5;
+        cmd_frame.Size = 4;
         cmd_frame.Flags = VSCAN_FLAGS_STANDARD;
-        cmd_frame.Data[0] = pos_cmd_>>24;
-        cmd_frame.Data[1] = pos_cmd_>>16;
-        cmd_frame.Data[2] = pos_cmd_>>8;
-        cmd_frame.Data[3] = pos_cmd_;
-        cmd_frame.Data[4] = rot_dir_;
+        // cmd_frame.Data[0] = pos_cmd_>>24;
+        // cmd_frame.Data[1] = pos_cmd_>>16;
+        // cmd_frame.Data[2] = pos_cmd_>>8;
+        // cmd_frame.Data[3] = pos_cmd_;
+        // cmd_frame.Data[4] = rot_dir_;
+        usbcan_handle_.wrapMsgData(cmd_frame,pos_cmd_);
 
         write_buffer_.push_back(cmd_frame);
 
-        info_pub_ = nh.advertise<std_msgs::Int32MultiArray>("/motor_pos",1);
+        info_pub_ = nh.advertise<std_msgs::UInt32MultiArray>("/motor_pos",1);
         pos_cmd_sub_ = nh.subscribe("/motor_pos_cmd",1,&usbcan_test_write::poscmdCB,this);  
 
         info_msg_.data.resize(2,0);
@@ -82,8 +84,8 @@ public:
                         if(read_msg.Id==0x004)
                         {
                             // ROS_INFO("Got CAN-frame with ID: %03x, Data: %02x %02x %02x %02x %02x %02x %02x %02x", read_msg.Id, read_msg.Data[0], read_msg.Data[1], read_msg.Data[2], read_msg.Data[3], read_msg.Data[4], read_msg.Data[5], read_msg.Data[6], read_msg.Data[7]);
-                            pot_ = read_msg.Data[0]<<24 | read_msg.Data[1]<<16 | read_msg.Data[2]<<8 | read_msg.Data[3];
-                            enc_ = read_msg.Data[4]<<24 | read_msg.Data[5]<<16 | read_msg.Data[6]<<8 | read_msg.Data[7];
+                            pot_ = usbcan_handle_.getDatafromMsg(read_msg);
+                            enc_ = usbcan_handle_.getDatafromMsg(read_msg,4);
                             info_msg_.data[0] = pot_;
                             info_msg_.data[1] = enc_;
                             // ROS_INFO("enc: %i, pot: %i", enc, pot);
@@ -92,7 +94,7 @@ public:
                         if(read_msg.Id==0x006)
                         {
                             // ROS_INFO("Got CAN-frame with ID: %03x, Data: %02x %02x %02x %02x %02x %02x %02x %02x", read_msg.Id, read_msg.Data[0], read_msg.Data[1], read_msg.Data[2], read_msg.Data[3], read_msg.Data[4], read_msg.Data[5], read_msg.Data[6], read_msg.Data[7]);
-                            info_msg_.data[2] = read_msg.Data[0]<<24 | read_msg.Data[1]<<16 | read_msg.Data[2]<<8 | read_msg.Data[3];
+                            info_msg_.data[2] = usbcan_handle_.getDatafromMsg(read_msg);
                         }
                         info_pub_.publish(info_msg_);
                     }
@@ -110,26 +112,22 @@ public:
         }else{
             ROS_WARN_STREAM("Reconnecting to USB-CAN adapter and opening port...");
             usbcan_handle_.open(VSCAN_FIRST_FOUND,mode_,can_baudrate_);
-            sleep(5); //?????????????
+            ros::Duration dura(5);
+            dura.sleep(); 
         }
     }
 
-    void poscmdCB(const std_msgs::Int32MultiArrayConstPtr &cmd)
+    void poscmdCB(const std_msgs::UInt32MultiArrayConstPtr &cmd)
     {
-        pos_cmd_ = abs(cmd->data[0]);
+        pos_cmd_ = cmd->data[0];
 
-        if(cmd->data[0]<0)
-        {
-            rot_dir_ = 1;
-        }else{
-            rot_dir_ = 0;
-        }
-
-        write_buffer_[0].Data[0] = pos_cmd_>>24;
-        write_buffer_[0].Data[1] = pos_cmd_>>16;
-        write_buffer_[0].Data[2] = pos_cmd_>>8;
-        write_buffer_[0].Data[3] = pos_cmd_;
-        write_buffer_[0].Data[4] = rot_dir_;
+        // write_buffer_[0].Data[0] = pos_cmd_>>24;
+        // write_buffer_[0].Data[1] = pos_cmd_>>16;
+        // write_buffer_[0].Data[2] = pos_cmd_>>8;
+        // write_buffer_[0].Data[3] = pos_cmd_;
+        // write_buffer_[0].Data[4] = rot_dir_;
+        usbcan_handle_.wrapMsgData(write_buffer_[0],pos_cmd_);
+        
 
         if(usbcan_handle_.noError())
         {        
@@ -178,11 +176,12 @@ int main(int argc, char **argv)
     
     usbcan_test_write usbcan_test_write_inst;
 
-    sleep(0.05);
-
     usbcan_test_write_inst.init(nh, tty, mode, can_baudrate);
 
-    ros::Rate rate(1000);
+    ros::Duration dura(0.05);
+    dura.sleep();
+
+    // ros::Rate rate(1000);
 
     while (ros::ok())
     {
