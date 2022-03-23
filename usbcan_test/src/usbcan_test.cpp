@@ -1,5 +1,5 @@
 #include <vscan_usbcan_api/usbcan.h>
-#include <std_msgs/Int32MultiArray.h>
+#include <std_msgs/Int16MultiArray.h>
 
 int main(int argc, char **argv)
 {
@@ -30,9 +30,9 @@ int main(int argc, char **argv)
     ros::init(argc, argv, n_name);
     ros::NodeHandle nh;
 
-    ros::Publisher pos_pub = nh.advertise<std_msgs::Int32MultiArray>("/motor_pos",1);
+    ros::Publisher pos_pub = nh.advertise<std_msgs::Int16MultiArray>("/motor_pos",1);
 
-    std_msgs::Int32MultiArray motor_pos_msg;
+    std_msgs::Int16MultiArray motor_pos_msg;
 
     motor_pos_msg.data.resize(2,0);
 
@@ -69,9 +69,9 @@ int main(int argc, char **argv)
     // test_write_buffer[1].Data[0] = 0x01;
     // test_write_buffer[1].Data[1] = 0x02;
 
-    uint32_t test_value = 2773;
+    int16_t test_value = 2773;
 
-    uint32_t enc = 0, pot = 0;
+    int16_t enc = 0, pot = 0;
 
     VSCAN_MSG test_frame;
     test_frame.Id = 0x12fff;

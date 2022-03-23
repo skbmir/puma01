@@ -105,17 +105,20 @@ bool usbcan_handle::noError()
     }
 }
 
-void usbcan_handle::wrapMsgData(VSCAN_MSG &msg, uint32_t &val, int byte_offset)
+void usbcan_handle::wrapMsgData(VSCAN_MSG &msg, int16_t &val, int byte_offset)
 {
-    msg.Data[byte_offset] = val>>24;
-    msg.Data[byte_offset+1] = val>>16;
-    msg.Data[byte_offset+2] = val>>8;
-    msg.Data[byte_offset+3] = val;
+    // msg.Data[byte_offset] = val>>24;
+    // msg.Data[byte_offset+1] = val>>16;
+    // msg.Data[byte_offset+2] = val>>8;
+    // msg.Data[byte_offset+3] = val;
+    msg.Data[byte_offset] = val>>8;
+    msg.Data[byte_offset+1] = val;
 }
 
-uint32_t usbcan_handle::getDatafromMsg(VSCAN_MSG &msg, int byte_offset)
+int16_t usbcan_handle::getDatafromMsg(VSCAN_MSG &msg, int byte_offset)
 {
-    return msg.Data[byte_offset]<<24 | msg.Data[byte_offset+1]<<16 | msg.Data[byte_offset+2]<<8 | msg.Data[byte_offset+3];
+    // return msg.Data[byte_offset]<<24 | msg.Data[byte_offset+1]<<16 | msg.Data[byte_offset+2]<<8 | msg.Data[byte_offset+3];
+    return msg.Data[byte_offset]<<8 | msg.Data[byte_offset+1];
 }
 
 

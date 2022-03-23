@@ -39,10 +39,10 @@ public:
     bool noError();
 
     // insert given 'uint32_t' number in Data field of given VSCAN_MSG structure with given byte offset 
-    void wrapMsgData(VSCAN_MSG &msg, uint32_t &val, int byte_offset = 0);
+    void wrapMsgData(VSCAN_MSG &msg, int16_t &val, int byte_offset = 0);
 
     // get 'uint32_t' number from Data field of given VSCAN_MSG structure
-    uint32_t getDatafromMsg(VSCAN_MSG &msg, int byte_offset = 0);
+    int16_t getDatafromMsg(VSCAN_MSG &msg, int byte_offset = 0);
 
 
 // not defined functions (

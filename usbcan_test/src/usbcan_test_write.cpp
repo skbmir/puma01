@@ -1,5 +1,5 @@
 #include <vscan_usbcan_api/usbcan.h>
-#include <std_msgs/UInt32MultiArray.h>
+#include <std_msgs//Int16MultiArray.h>
 
 
 class usbcan_test_write
@@ -8,7 +8,7 @@ private:
     ros::Publisher info_pub_;
     ros::Subscriber pos_cmd_sub_;
 
-    std_msgs::UInt32MultiArray info_msg_;
+    std_msgs::Int16MultiArray info_msg_;
 
     int read_buff_size_,
         write_buff_size_;
@@ -23,7 +23,7 @@ private:
     std::vector<VSCAN_MSG> write_buffer_;
 
     int rot_dir_;
-    uint32_t pos_cmd_, enc_, pot_;
+    int16_t pos_cmd_, enc_, pot_, vel_;
 
 public:
     usbcan_test_write() {}
@@ -41,6 +41,7 @@ public:
         pos_cmd_ = 0;
         enc_ = 0;
         pot_ = 0;
+        vel_ = 0;
         rot_dir_ = 0;
 
         read_buffer_.resize(read_buff_size_);
@@ -54,15 +55,33 @@ public:
         // cmd_frame.Data[1] = pos_cmd_>>16;
         // cmd_frame.Data[2] = pos_cmd_>>8;
         // cmd_frame.Data[3] = pos_cmd_;
-        // cmd_frame.Data[4] = rot_dir_;
         usbcan_handle_.wrapMsgData(cmd_frame,pos_cmd_);
 
-        write_buffer_.push_back(cmd_frame);
 
-        info_pub_ = nh.advertise<std_msgs::UInt32MultiArray>("/motor_pos",1);
+        // int16_t test_val_1 = 1, test_val_2 = 1, test_val_3 = 0, test_val_4 = 0;
+        // VSCAN_MSG test_frame;
+        // test_frame.Id = 0x002;
+        // test_frame.Size = 8;
+        // test_frame.Flags = VSCAN_FLAGS_STANDARD;
+        // usbcan_handle_.wrapMsgData(test_frame,test_val_1);
+        // usbcan_handle_.wrapMsgData(test_frame,test_val_2,2);
+        // usbcan_handle_.wrapMsgData(test_frame,test_val_3,4);
+        // usbcan_handle_.wrapMsgData(test_frame,test_val_4,6);
+
+        // ROS_INFO("%i, %i, %i, %i", test_val_1, test_val_2, test_val_3, test_val_4);
+        // ROS_INFO("Data: %02x %02x %02x %02x %02x %02x %02x %02x", test_frame.Data[0], test_frame.Data[1], test_frame.Data[2], test_frame.Data[3], test_frame.Data[4], test_frame.Data[5], test_frame.Data[6], test_frame.Data[7]);
+                           
+        // test_val_1 = usbcan_handle_.getDatafromMsg(test_frame);
+        // test_val_2 = usbcan_handle_.getDatafromMsg(test_frame,2);
+        // test_val_3 = usbcan_handle_.getDatafromMsg(test_frame,4);
+        // test_val_4 = usbcan_handle_.getDatafromMsg(test_frame,6);
+
+        // ROS_INFO("%i, %i, %i, %i", test_val_1, test_val_2, test_val_3, test_val_4);
+
+        info_pub_ = nh.advertise<std_msgs::Int16MultiArray>("/motor_pos",1);
         pos_cmd_sub_ = nh.subscribe("/motor_pos_cmd",1,&usbcan_test_write::poscmdCB,this);  
 
-        info_msg_.data.resize(2,0);
+        info_msg_.data.resize(3,0);
 
     // open CAN port
     // you can use VSCAN_FIRST_FOUND instead tty
@@ -85,17 +104,20 @@ public:
                         {
                             // ROS_INFO("Got CAN-frame with ID: %03x, Data: %02x %02x %02x %02x %02x %02x %02x %02x", read_msg.Id, read_msg.Data[0], read_msg.Data[1], read_msg.Data[2], read_msg.Data[3], read_msg.Data[4], read_msg.Data[5], read_msg.Data[6], read_msg.Data[7]);
                             pot_ = usbcan_handle_.getDatafromMsg(read_msg);
-                            enc_ = usbcan_handle_.getDatafromMsg(read_msg,4);
+                            enc_ = usbcan_handle_.getDatafromMsg(read_msg,2);
+                            vel_ = usbcan_handle_.getDatafromMsg(read_msg,4);
+                            // ROS_INFO("pot: %i, enc: %i", pot_, enc_);
                             info_msg_.data[0] = pot_;
                             info_msg_.data[1] = enc_;
+                            info_msg_.data[2] = vel_;
                             // ROS_INFO("enc: %i, pot: %i", enc, pot);
                             
                         }
-                        if(read_msg.Id==0x006)
-                        {
-                            // ROS_INFO("Got CAN-frame with ID: %03x, Data: %02x %02x %02x %02x %02x %02x %02x %02x", read_msg.Id, read_msg.Data[0], read_msg.Data[1], read_msg.Data[2], read_msg.Data[3], read_msg.Data[4], read_msg.Data[5], read_msg.Data[6], read_msg.Data[7]);
-                            info_msg_.data[2] = usbcan_handle_.getDatafromMsg(read_msg);
-                        }
+                        // if(read_msg.Id==0x006)
+                        // {
+                        //     // ROS_INFO("Got CAN-frame with ID: %03x, Data: %02x %02x %02x %02x %02x %02x %02x %02x", read_msg.Id, read_msg.Data[0], read_msg.Data[1], read_msg.Data[2], read_msg.Data[3], read_msg.Data[4], read_msg.Data[5], read_msg.Data[6], read_msg.Data[7]);
+                        //     info_msg_.data[2] = usbcan_handle_.getDatafromMsg(read_msg);
+                        // }
                         info_pub_.publish(info_msg_);
                     }
                 }
@@ -117,7 +139,7 @@ public:
         }
     }
 
-    void poscmdCB(const std_msgs::UInt32MultiArrayConstPtr &cmd)
+    void poscmdCB(const std_msgs::Int16MultiArrayConstPtr &cmd)
     {
         pos_cmd_ = cmd->data[0];
 
