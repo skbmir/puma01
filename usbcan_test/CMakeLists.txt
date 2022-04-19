@@ -7,6 +7,7 @@ find_package(catkin REQUIRED COMPONENTS
   vscan_usbcan_api
   roscpp
   std_msgs
+  sensor_msgs
 )
 
 catkin_package(
