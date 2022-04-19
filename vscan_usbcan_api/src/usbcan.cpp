@@ -111,7 +111,7 @@ void usbcan_handle::wrapMsgData(VSCAN_MSG &msg, int16_t &val, int byte_offset)
     // msg.Data[byte_offset+1] = val>>16;
     // msg.Data[byte_offset+2] = val>>8;
     // msg.Data[byte_offset+3] = val;
-    msg.Data[byte_offset] = val>>8;
+    msg.Data[byte_offset] =   val>>8;
     msg.Data[byte_offset+1] = val;
 }
 

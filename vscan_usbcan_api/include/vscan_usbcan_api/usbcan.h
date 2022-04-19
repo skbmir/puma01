@@ -38,10 +38,10 @@ public:
     // check if there's no error got from VSCAN USB-CAN driver
     bool noError();
 
-    // insert given 'uint32_t' number in Data field of given VSCAN_MSG structure with given byte offset 
+    // insert given 'int16_t' number in Data field of given VSCAN_MSG structure with given byte offset 
     void wrapMsgData(VSCAN_MSG &msg, int16_t &val, int byte_offset = 0);
 
-    // get 'uint32_t' number from Data field of given VSCAN_MSG structure
+    // get 'int16_t' number from Data field of given VSCAN_MSG structure
     int16_t getDatafromMsg(VSCAN_MSG &msg, int byte_offset = 0);
 
 
