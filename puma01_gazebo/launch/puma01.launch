@@ -11,11 +11,17 @@
       <arg name="x" default="0"/>
       <arg name="y" default="0"/>
       <arg name="z" default="0"/> 
+      <arg name="j1" default="0"/>
+      <arg name="j2" default="0"/>
+      <arg name="j3" default="0"/> 
+      <arg name="j4" default="0"/>
+      <arg name="j5" default="0"/>
+      <arg name="j6" default="0"/> 
 
       <!-- launching Gazebo, empty world -->
       <include file="$(find gazebo_ros)/launch/empty_world.launch">
         <arg name="world_name" value="worlds/empty.world"/>
-        <arg name="paused" value="false"/>
+        <arg name="paused" value="true"/>
         <arg name="use_sim_time" value="true"/>
         <arg name="gui" value="false"/>
         <!-- <arg name="recording" value="false"/>
@@ -23,8 +29,14 @@
       </include>  
 
       <!-- spawning the robot model -->
-      <node name="spawn_urdf" pkg="gazebo_ros" type="spawn_model" args="-urdf -param /puma01_sim/robot_description -model puma01 -x $(arg x) -y $(arg y) -z $(arg z)" />
-
+      <node name="spawn_urdf" pkg="gazebo_ros" type="spawn_model"
+      args="-urdf 
+            -param /puma01_sim/robot_description 
+            -model puma01 
+            -x $(arg x) -y $(arg y) -z $(arg z)  
+            -J joint_1 $(arg j1) -J joint_2 $(arg j2) -J joint_3 $(arg j3)
+            -J joint_4 $(arg j4) -J joint_5 $(arg j5) -J joint_3 $(arg j6)
+            -unpause"/>
 
       <!-- launching controllers -->
       <include file="$(find puma01_control)/launch/puma01_controllers.launch"></include>  
