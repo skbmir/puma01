@@ -8,22 +8,22 @@
   </group>
 
       <!-- position of robot in sim space -->
-      <arg name="x" default="0"/>
-      <arg name="y" default="0"/>
-      <arg name="z" default="0"/> 
-      <arg name="j1" default="0"/>
-      <arg name="j2" default="0"/>
-      <arg name="j3" default="0"/> 
-      <arg name="j4" default="0"/>
-      <arg name="j5" default="0"/>
-      <arg name="j6" default="0"/> 
+      <arg name="x" default="0.0"/>
+      <arg name="y" default="0.0"/>
+      <arg name="z" default="0.0"/> 
+      <arg name="j1" default="0.0"/>
+      <arg name="j2" default="0.0"/>
+      <arg name="j3" default="0.0"/> 
+      <arg name="j4" default="0.0"/>
+      <arg name="j5" default="0.0"/>
+      <arg name="j6" default="0.0"/> 
 
       <!-- launching Gazebo, empty world -->
       <include file="$(find gazebo_ros)/launch/empty_world.launch">
         <arg name="world_name" value="worlds/empty.world"/>
         <arg name="paused" value="true"/>
         <arg name="use_sim_time" value="true"/>
-        <arg name="gui" value="false"/>
+        <arg name="gui" value="true"/>
         <!-- <arg name="recording" value="false"/>
         <arg name="debug" value="false"/> -->
       </include>  
