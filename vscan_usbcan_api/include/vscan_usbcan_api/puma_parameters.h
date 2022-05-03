@@ -1,0 +1,15 @@
+#pragma once
+
+#define MOTOR_1_G   -62.6111
+#define MOTOR_2_G   107.815 
+#define MOTOR_3_G   -53.7063
+
+#define MOTOR_1_ENC_RANGE   250  
+#define MOTOR_2_ENC_RANGE   200
+#define MOTOR_3_ENC_RANGE   250
+
+#define MATH_PI_    3.1415926536
+
+#define MOTOR_1_ENC_TO_JOINT_CONST      (2 * MATH_PI_)/(MOTOR_1_G * MOTOR_1_ENC_RANGE)
+#define MOTOR_2_ENC_TO_JOINT_CONST      (2 * MATH_PI_)/(MOTOR_2_G * MOTOR_2_ENC_RANGE)
+#define MOTOR_3_ENC_TO_JOINT_CONST      (2 * MATH_PI_)/(MOTOR_3_G * MOTOR_3_ENC_RANGE)
