@@ -266,25 +266,28 @@
     <child link="link1"/>
     <axis xyz="0.0 0.0 1.0"/>
     <dynamics damping="0.5" friction="0.0"/>
+    <!-- angle range = 5.585 -->
     <limit effort="150.0" velocity="10.0" lower="-2.79" upper="2.79" />
   </joint>
   
   <joint name="joint_2" type="revolute">
-    <origin xyz="0.0 0.2182 0.0" rpy="-1.57079632679 0.0 0.0"/>
+    <origin xyz="0.0 0.2182 0.0" rpy="-1.57079632679 -1.57079632679 0.0"/>
     <parent link="link1"/>
     <child link="link2"/>
     <axis xyz="0.0 0.0 1.0"/>
     <dynamics damping="0.5" friction="0.0"/>
-    <limit effort="150.0" velocity="10.0" lower="-3.93" upper="0.78" />
+    <!-- angle range = 4.6425 -->
+    <limit effort="150.0" velocity="10.0" lower="-2.32" upper="2.32" />   
   </joint>
   
   <joint name="joint_3" type="revolute">
-    <origin xyz="0.4318 0.0 -0.0889" rpy="0.0 0.0 0.0"/>
+    <origin xyz="0.4318 0.0 -0.0889" rpy="0.0 0.0 1.57079632679"/>
     <parent link="link2"/>
     <child link="link3"/>
     <axis xyz="0.0 0.0 1.0"/>
     <dynamics damping="0.5" friction="0.0"/>
-    <limit effort="150.0" velocity="10.0" lower="-0.78" upper="3.93" />
+    <!-- angle range = 4.9567 -->
+    <limit effort="150.0" velocity="10.0" lower="-2.478" upper="2.478" />
   </joint>
     
   <joint name="joint_4" type="revolute">
@@ -292,8 +295,8 @@
     <parent link="link3"/>
     <child link="link4"/>
     <axis xyz="0.0 0.0 1.0"/>
-    <dynamics damping="0.5" friction="0.0"/>
-    <limit effort="150.0" velocity="10.0" lower="-1.92" upper="2.97" />
+    <!-- angle range = 4.8869 -->
+    <limit effort="150.0" velocity="10.0" lower="-1.92" upper="2.97" /> <!-- ???? -->
   </joint>
   
   <joint name="joint_5" type="revolute">
@@ -301,7 +304,7 @@
     <parent link="link4"/>
     <child link="link5"/>
     <axis xyz="0.0 0.0 1.0"/>
-    <dynamics damping="0.5" friction="0.0"/>
+    <!-- angle range = 3.4906 -->
     <limit effort="150.0" velocity="10.0" lower="-1.74" upper="1.74" />
   </joint>
   
@@ -310,8 +313,8 @@
     <parent link="link5"/>
     <child link="link6"/>
     <axis xyz="0.0 0.0 1.0"/>
-    <dynamics damping="0.5" friction="0.0"/>
-    <limit effort="150.0" velocity="10.0" lower="-4.64" upper="4.64" />
+   <!-- angle range = 9.2851 -->
+    <limit effort="150.0" velocity="10.0" lower="-4.64" upper="4.64" /> <!-- ???? -->
   </joint>
 
   <joint name="joint_6_T" type="revolute">

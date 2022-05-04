@@ -124,16 +124,20 @@ namespace puma01_controllers
         
 
 		double 	s2 = sin(joints_[1].getPosition()), //sin(q2)
-            s2_2 = sin(2.0*joints_[1].getPosition()), //sin(2*q2)
-            c2_2 = cos(2.0*joints_[1].getPosition()), //cos(2*q2)
+            s2_2 = sin(2*joints_[1].getPosition()), //sin(2*q2)
+            c2_2 = cos(2*joints_[1].getPosition()), //cos(2*q2)
             c2 = cos(joints_[1].getPosition()), //cos(q2)
             s3 = sin(joints_[2].getPosition()), //sin(q3)
             c3 = cos(joints_[2].getPosition()), //cos(q3)
             s23 = sin(joints_[1].getPosition() + joints_[2].getPosition()), //sin(q2 + q3)
             c23 = cos(joints_[1].getPosition() + joints_[2].getPosition()), //cos(q2 + q3)
-            s23_23 = sin(2.0*(joints_[1].getPosition() + joints_[2].getPosition())),  //sin(2*q2 + 2*q3)
-            c23_2 = cos(2.0*joints_[1].getPosition() + joints_[2].getPosition()); //cos(2*q2 + q3)
+            s23_23 = sin(2*(joints_[1].getPosition() + joints_[2].getPosition())),  //sin(2*q2 + 2*q3)
+            c23_2 = cos(2*joints_[1].getPosition() + joints_[2].getPosition()), //cos(2*q2 + q3)
+            s23_2 = sin(2*joints_[1].getPosition() + joints_[2].getPosition()), //sin(2*q2 + q3)
+            c23_23 = cos(2*(joints_[1].getPosition() + joints_[2].getPosition())),  //cos(2*q2 + 2*q3)
+            c2_2c = cos(2*joints_[1].getPosition() + 0.017444);
     
+    // for desired positions
     // double 	s2 = sin(q_desired_[1]), //sin(q2)
     //         s2_2 = sin(2.0*q_desired_[1]), //sin(2*q2)
     //         c2_2 = cos(2.0*q_desired_[1]), //cos(2*q2)
@@ -148,23 +152,38 @@ namespace puma01_controllers
     double cmd_effort;
 
 
-  // vector C for N = 3
-		C[0] = 0.12418*joints_[1].getVelocity()*joints_[1].getVelocity()*s23 - 0.021135*joints_[1].getVelocity()*joints_[1].getVelocity()*s2 + 0.12418*joints_[2].getVelocity()*joints_[2].getVelocity()*s23 + 0.61451*joints_[1].getVelocity()*joints_[1].getVelocity()*c2 - 0.052884*joints_[0].getVelocity()*joints_[1].getVelocity()*s23_23 - 0.052884*joints_[0].getVelocity()*joints_[2].getVelocity()*s23_23 + 0.74714*joints_[0].getVelocity()*joints_[1].getVelocity()*c23_2 + 0.37357*joints_[0].getVelocity()*joints_[2].getVelocity()*c23_2 - 0.014198*joints_[0].getVelocity()*joints_[1].getVelocity()*c2_2 - 0.81386*joints_[0].getVelocity()*joints_[1].getVelocity()*s2_2 + 0.24837*joints_[1].getVelocity()*joints_[2].getVelocity()*s23 + 0.37357*joints_[0].getVelocity()*joints_[2].getVelocity()*c3;
-		C[1] = 0.026442*joints_[0].getVelocity()*joints_[0].getVelocity()*s23_23 - 0.37357*joints_[0].getVelocity()*joints_[0].getVelocity()*c23_2 + 0.0070992*joints_[0].getVelocity()*joints_[0].getVelocity()*c2_2 + 0.40693*joints_[0].getVelocity()*joints_[0].getVelocity()*s2_2 + 0.37357*joints_[2].getVelocity()*joints_[2].getVelocity()*c3 + 0.74714*joints_[1].getVelocity()*joints_[2].getVelocity()*c3;
-		C[2] = 0.026442*joints_[0].getVelocity()*joints_[0].getVelocity()*s23_23 - 0.18679*joints_[0].getVelocity()*joints_[0].getVelocity()*c23_2 - 0.18679*joints_[0].getVelocity()*joints_[0].getVelocity()*c3 - 0.37357*joints_[1].getVelocity()*joints_[1].getVelocity()*c3;
+// vector C for N = 3 (arm pointing up)
+    C[0] = 0.61451*joints_[1].getVelocity()*joints_[1].getVelocity()*s2 + 0.12418*joints_[1].getVelocity()*joints_[1].getVelocity()*s23 + 0.12418*joints_[2].getVelocity()*joints_[2].getVelocity()*s23 + 0.021135*joints_[1].getVelocity()*joints_[1].getVelocity()*c2 - 0.37357*joints_[0].getVelocity()*joints_[2].getVelocity()*s2 - 0.052884*joints_[0].getVelocity()*joints_[1].getVelocity()*s23_23 - 0.052884*joints_[0].getVelocity()*joints_[2].getVelocity()*s23_23 + 0.74714*joints_[0].getVelocity()*joints_[1].getVelocity()*s23_2 + 0.37357*joints_[0].getVelocity()*joints_[2].getVelocity()*s23_2 + 0.014198*joints_[0].getVelocity()*joints_[1].getVelocity()*c2_2 + 0.81386*joints_[0].getVelocity()*joints_[1].getVelocity()*s2_2 + 0.24837*joints_[1].getVelocity()*joints_[2].getVelocity()*s23;
+    C[1] = 0.026442*joints_[0].getVelocity()*joints_[0].getVelocity()*s23_23 - 0.37357*joints_[2].getVelocity()*joints_[2].getVelocity()*s2 - 0.37357*joints_[0].getVelocity()*joints_[0].getVelocity()*s23_2 - 0.0070992*joints_[0].getVelocity()*joints_[0].getVelocity()*c2_2 - 0.40693*joints_[0].getVelocity()*joints_[0].getVelocity()*s2_2 - 0.74714*joints_[1].getVelocity()*joints_[2].getVelocity()*s2;
+    C[2] = 0.18679*joints_[0].getVelocity()*joints_[0].getVelocity()*s2 + 0.37357*joints_[1].getVelocity()*joints_[1].getVelocity()*s2 + 0.026442*joints_[0].getVelocity()*joints_[0].getVelocity()*s23_23 - 0.18679*joints_[0].getVelocity()*joints_[0].getVelocity()*s23_2;
 
-  // mass matrix M for N = 3
-		M[0] = 0.38049*c2_2 - 0.0070992*s2_2 + 0.37357*s3 + 0.052884*c2_2*c3*c2_2*c3 + 0.37357*c2_2*s3 + 0.37357*s2_2*c3 - 0.052884*s2_2*c3*s3 + 2.6859; //M11
-		M[1] = 0.021135*c2 + 0.61451*s2 - 0.12418*c2*c3 + 0.12418*s2*s3;  //M12
-		M[2] =	-0.12418*c23; //M13
+  // vector C for N = 3 (for "elbow configuration")
+		// C[0] = 0.12418*joints_[1].getVelocity()*joints_[1].getVelocity()*s23 - 0.021135*joints_[1].getVelocity()*joints_[1].getVelocity()*s2 + 0.12418*joints_[2].getVelocity()*joints_[2].getVelocity()*s23 + 0.61451*joints_[1].getVelocity()*joints_[1].getVelocity()*c2 - 0.052884*joints_[0].getVelocity()*joints_[1].getVelocity()*s23_23 - 0.052884*joints_[0].getVelocity()*joints_[2].getVelocity()*s23_23 + 0.74714*joints_[0].getVelocity()*joints_[1].getVelocity()*c23_2 + 0.37357*joints_[0].getVelocity()*joints_[2].getVelocity()*c23_2 - 0.014198*joints_[0].getVelocity()*joints_[1].getVelocity()*c2_2 - 0.81386*joints_[0].getVelocity()*joints_[1].getVelocity()*s2_2 + 0.24837*joints_[1].getVelocity()*joints_[2].getVelocity()*s23 + 0.37357*joints_[0].getVelocity()*joints_[2].getVelocity()*c3;
+		// C[1] = 0.026442*joints_[0].getVelocity()*joints_[0].getVelocity()*s23_23 - 0.37357*joints_[0].getVelocity()*joints_[0].getVelocity()*c23_2 + 0.0070992*joints_[0].getVelocity()*joints_[0].getVelocity()*c2_2 + 0.40693*joints_[0].getVelocity()*joints_[0].getVelocity()*s2_2 + 0.37357*joints_[2].getVelocity()*joints_[2].getVelocity()*c3 + 0.74714*joints_[1].getVelocity()*joints_[2].getVelocity()*c3;
+		// C[2] = 0.026442*joints_[0].getVelocity()*joints_[0].getVelocity()*s23_23 - 0.18679*joints_[0].getVelocity()*joints_[0].getVelocity()*c23_2 - 0.18679*joints_[0].getVelocity()*joints_[0].getVelocity()*c3 - 0.37357*joints_[1].getVelocity()*joints_[1].getVelocity()*c3;
+  
+  // mass matrix M for N = 3 (arm pointing up)
+    M[0] = 0.37357*c3 - 0.37357*c23_2 - 0.40699*c2_2c + 0.026442*c23_23 + 2.6859; //M11
+    M[1] = 0.021135*s2 - 0.61451*c2 - 0.12418*c2*c3 + 0.12418*s2*s3; //M12
+    M[2] = -0.12418*c23; //M13
 
-    //M[3] = M[1]; //M21 = M12
-		M[4] = 0.74714*s3 + 2.1942; //M22
-		M[5] = 0.37357*s3 + 0.33112; //M23
+    M[4] = 0.74714*c3 + 2.1942; //M22
+    M[5] = 0.37357*c3 + 0.33112; //M23
 
-    //M[6] = M[2];  //M31 = M13
-    //M[7] = M[5];  //M32 = M23
-		M[8] = 0.33112;  //M33
+    M[8] = 0.33112; //M33
+
+  // mass matrix M for N = 3 (arm in "elbow configuration")
+		// M[0] = 0.38049*c2_2 - 0.0070992*s2_2 + 0.37357*s3 + 0.052884*c2_2*c3*c2_2*c3 + 0.37357*c2_2*s3 + 0.37357*s2_2*c3 - 0.052884*s2_2*c3*s3 + 2.6859; //M11
+		// M[1] = 0.021135*c2 + 0.61451*s2 - 0.12418*c2*c3 + 0.12418*s2*s3;  //M12
+		// M[2] =	-0.12418*c23; //M13
+
+    // //M[3] = M[1]; //M21 = M12
+		// M[4] = 0.74714*s3 + 2.1942; //M22
+		// M[5] = 0.37357*s3 + 0.33112; //M23
+
+    // //M[6] = M[2];  //M31 = M13
+    // //M[7] = M[5];  //M32 = M23
+		// M[8] = 0.33112;  //M33
 
   // gravity vector G for N = 6
 		// G[1] = 1.02416*s2 - 37.2347*c2 - 8.54702*s23 - 0.0282528*s23*cos(msg->position[4]) - 0.0282528*c23*cos(msg->position[3])*sin(msg->position[4]);
@@ -172,9 +191,13 @@ namespace puma01_controllers
 		// G[3] = 0.0282528*c23*sin(msg->position[3])*sin(msg->position[4]);
 		// G[4] = -0.0282528*c23*sin(msg->position[4]) - 0.0282528*s23*cos(msg->position[3])*cos(msg->position[4]);
 
-  // gravity vector G for N = 3
-		G[1] = 1.02416*s2 - 37.2347*c2 - 8.48712*s23;
-		G[2] = - 8.48712*s23;
+  // gravity vector G for N = 3 (for pointing up configuration)
+    G[1] = - 8.48712*s23 - 1.02416*c2 - 37.2347*s2;
+    G[2] = - 8.48712*s23;
+
+  // gravity vector G for N = 3 (for "elbow configuration")
+	// 	G[1] = 1.02416*s2 - 37.2347*c2 - 8.48712*s23;
+	// 	G[2] = - 8.48712*s23;
 
 	// computing velocities dq and PID terms
 		for(unsigned int i=0; i<n_joints_; i++)
