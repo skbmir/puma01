@@ -1,0 +1,11 @@
+moveit_setup_assistant_config:
+  URDF:
+    package: puma01_description
+    relative_path: urdf/puma01.urdf
+    xacro_args: ""
+  SRDF:
+    relative_path: config/puma01.srdf
+  CONFIG:
+    author_name: doodoodude
+    author_email: dodoooddo@duued.du
+    generated_timestamp: 1651849830
