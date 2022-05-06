@@ -1,6 +1,6 @@
 # puma01:
 generic_hw_control_loop:
-  loop_hz: 250 
+  loop_hz: 200 
   cycle_time_error_threshold: 0.1 # need to set properly
 
 hardware_interface:
@@ -14,7 +14,7 @@ hardware_interface:
 
 joint_state_controller:
   type: joint_state_controller/JointStateController
-  publish_rate: 250
+  publish_rate: 200
 
 posvelacc_trajectory_controller:
   type: pos_vel_acc_controllers/JointTrajectoryController

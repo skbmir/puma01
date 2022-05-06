@@ -2,6 +2,7 @@
 moveit_sim_hw_interface:
   joint_model_group: puma_arm
   joint_model_group_pose: home
+  
 # Settings for ros_control_boilerplate control loop
 generic_hw_control_loop:
   loop_hz: 200
@@ -22,7 +23,7 @@ hardware_interface:
 # Publish all joint states ------------------------------------------
 joint_state_controller:
   type: joint_state_controller/JointStateController
-  publish_rate: 100  
+  publish_rate: 200  
 
 # Trajectory controller -----------------------------------------------
 
