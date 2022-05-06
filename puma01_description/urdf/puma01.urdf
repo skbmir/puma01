@@ -233,13 +233,13 @@
     <limit effort="150.0" velocity="10.0" lower="-4.64" upper="4.64" /> <!-- ???? -->
   </joint>
 
-  <joint name="joint_6_T" type="revolute">
+  <joint name="joint_6_T" type="fixed">
     <origin xyz="0.0 0.0 0.05334" rpy="0 0 0"/>
     <parent link="link6"/>
     <child link="link_T"/>
     <axis xyz="0.0 0.0 1.0"/>
-    <dynamics damping="0.0" friction="0.0"/>
-    <limit effort="1.0" velocity="1.0" lower="0" upper="0" />
+    <!-- <dynamics damping="0.0" friction="0.0"/>
+    <limit effort="1.0" velocity="1.0" lower="0" upper="0" /> -->
   </joint>
 
 </robot>

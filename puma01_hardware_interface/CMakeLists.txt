@@ -50,6 +50,16 @@ target_link_libraries(puma01_hw_interface
   ${catkin_LIBRARIES}
 )
 
+add_executable(puma01_hw_interface_test 
+  include/puma01_hardware_interface/puma01_hw_interface.h
+  src/puma01_hw_interface_test.cpp
+  src/puma01_hw_interface_main.cpp
+)
+add_dependencies(puma01_hw_interface_test ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+target_link_libraries(puma01_hw_interface_test
+  ${catkin_LIBRARIES}
+)
+
 install(DIRECTORY include/${PROJECT_NAME}/
   DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
 )

@@ -8,7 +8,7 @@
 
   <!-- <group ns="puma01"> -->
 
-    <node name="puma01_hw_interface_node" pkg="puma01_hardware_interface" type="puma01_hw_interface" output="screen"/> 
+    <node name="puma01_hw_interface_test_node" pkg="puma01_hardware_interface" type="puma01_hw_interface_test" output="screen"/> 
 
     <node name="controller_spawner" pkg="controller_manager" type="spawner" respawn="false"
     output="screen" args="posvelacc_trajectory_controller joint_state_controller --timeout 60"/>
