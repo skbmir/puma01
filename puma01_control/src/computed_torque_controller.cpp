@@ -203,6 +203,8 @@ namespace puma01_controllers
 		for(unsigned int i=0; i<n_joints_; i++)
 		{
 
+      // q_desired_[i] += tau_compensate_[i];
+
 		// position error
 			angles::shortest_angular_distance_with_large_limits(
 				joints_[i].getPosition(),

@@ -38,26 +38,16 @@ private:
 
     std::string action_name_;
 
-
     ros::Publisher info_pub_;
     std_msgs::Float64MultiArray info_msg_;
 
-    std::array<double,6>    q_, 
-                            wrench_, 
-                            last_wrench_, last_last_wrench_, last_last_last_wrench_, last_last_last_last_wrench_,
-                            desired_wrench_, wrench_error_, 
-                            tau_,PI;
+    double time_last_ = 0.0; 
 
-    tf2::Quaternion rotation_quat_;
-    tf2::Matrix3x3  rotation_mat_;
-    tf2::Vector3    translation_vec_, translation_diff_, force_, projected_force_;
+    tf2::Vector3    force_, projected_force_;
 
     std::array<tf2::Transform,6>    local_transforms_, transforms_;
 
     std::array<tf2::Vector3,6>  jacobian_w_, jacobian_v_;  // components of jacobian 6x6
-    
-    ros::Duration   cycle_period_;
-    double  time_last_ = 0.0;
 
     boost::shared_ptr<ros::AsyncSpinner> ft_sensor_spinner_, tf_spinner_; // AsyncSpinners for /tf and "/wrench" subscribers
     ros::CallbackQueue tf_queue_, ft_sensor_queue_;
@@ -157,7 +147,7 @@ public:
 
         bool succeed = true; // execution success mark
 
-        tau_ = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0}; // zeroing force_controller output
+        std::array<double,6>    desired_wrench_, wrench_error_, tau_, PI;
 
     // get robot configuration, NO NEED cause of using /tf for computing jacobian
         // current_joint_angles_ = as_goal->current_joint_angles.data;
@@ -177,8 +167,9 @@ public:
 
     // computing tau = J^T * F
         double time_now = ros::Time::now().toSec();
-        cycle_period_ = ros::Duration(time_now - time_last_);
+        ros::Duration cycle_period(time_now - time_last_);
         time_last_ = time_now; 
+        
 
         for(unsigned int i=0; i<6; i++)  // MAGIC number!!!!!!!!!!!!1
         {
@@ -187,23 +178,15 @@ public:
             if(i>2) 
             {
                 wrench_error_[i] = desired_wrench_[i]-force_[i-3]; 
+                info_msg_.data[i] = wrench_error_[i];
             }
 
         // compute PI output
-            PI[i] = pid_controllers_[i].computeCommand(wrench_error_[i], cycle_period_); // compute wrench PI output
-
-        // compute tau = J^T * F
-            // for(unsigned int j=0; j<3; j++)  // MAGIC number!!! but obviously, it works for 6-dof manipulators
-            // {
-            //     tau_[i] += jacobian_w_[j][i]*wrench_error_[j] + jacobian_v_[j][i]*wrench_error_[j+3]; 
-            // }
+            PI[i] = pid_controllers_[i].computeCommand(wrench_error_[i], cycle_period); // compute wrench PI output
 
         // shortened version of  tau = J^T * F
             // tau_[i] = jacobian_w_[i][0]*desired_wrench_[0] + jacobian_w_[i][1]*desired_wrench_[1] + jacobian_w_[i][2]*desired_wrench_[2]; // no need in torque control
             tau_[i] += jacobian_v_[i][0]*PI[3] + jacobian_v_[i][1]*PI[4] + jacobian_v_[i][2]*PI[5];
-
-        // to plot info data
-            // info_msg_.data[i] = wrench_error_[i];
 
         // set action result
             as_result_.output_torques.data[i] = tau_[i];
@@ -230,31 +213,10 @@ public:
     {
 
         // ROS_INFO("Got current wrench.");
-
-        last_wrench_[0] = sensor_msg->wrench.torque.x;
-        last_wrench_[1] = sensor_msg->wrench.torque.y;
-        last_wrench_[2] = sensor_msg->wrench.torque.z;
-        last_wrench_[3] = sensor_msg->wrench.force.x;
-        last_wrench_[4] = sensor_msg->wrench.force.y;
-        last_wrench_[5] = sensor_msg->wrench.force.z;
+        geometry_msgs::Vector3    new_force_ = sensor_msg->wrench.force;
 
         // filter wrench data
-        for(unsigned int i = 0; i<6; i++) //MAGIC number!!
-        {
-            // wrench_[i] = fabs(wrench_[i])<0.003 ? 0 : wrench_[i]; //saturation for very smaller values
-            // if(wrench_[i] != 0)
-            // { 
-            last_last_last_last_wrench_[i] = last_last_last_wrench_[i]; 
-            last_last_last_wrench_[i] = last_last_wrench_[i]; 
-            last_last_wrench_[i] = last_wrench_[i];  
-            // last_wrench_[i] = wrench_[i];   
-            wrench_[i] = (last_last_last_last_wrench_[i] + last_last_last_wrench_[i] + last_last_wrench_[i]+last_wrench_[i])/4; 
-            // }
-        }
-
-        force_[0] = wrench_[3];
-        force_[1] = wrench_[4];
-        force_[2] = wrench_[5];
+        force_ = force_vector_filter(new_force_);
 
         tf2::quatRotate(local_transforms_[5].getRotation(), force_);
         // projected_force_ = local_transforms_[5].getBasis()*force_;
@@ -268,6 +230,9 @@ public:
     // getting jacobian after we got global transforms
     void getJacobian()
     {
+
+        tf2::Vector3    translation_diff_;
+
         for(size_t i = 0; i<6; i++)  // MAGIC number!!
         {
         // J_w[i] = z_i
@@ -293,7 +258,8 @@ public:
     void getCurrentTFCB(const tf2_msgs::TFMessageConstPtr &tf_msg)
     {
 
-        // ROS_INFO("Got current transform.");
+        tf2::Quaternion rotation_quat_;
+        tf2::Vector3    translation_vec_;
 
         //getting local transformation matrices from /tf
         //computing transformation matrices
@@ -329,6 +295,36 @@ public:
         // tf_queue_.callOne();
         // ft_sensor_queue_.callOne();
     }
+    
+ tf2::Vector3 force_vector_filter(geometry_msgs::Vector3 & new_vector_) 
+{
+    const uint8_t filter_order_ = 20;
+    static std::array<std::array<double,3>,filter_order_> filter_conv_; // свёртка сигнала
+    tf2::Vector3 filter_out_; // выход фильтра
+
+    filter_conv_[0][0] = new_vector_.x; // принимаем новое значение 
+    filter_conv_[0][1] = new_vector_.y; 
+    filter_conv_[0][2] = new_vector_.z; 
+
+    for(size_t j = 0; j < 3; j++)
+    {
+
+        for(size_t i = 0; i < filter_order_-1; i++) // среднее суммы свёртки - скользящее среднее
+        {
+            filter_out_[j] += filter_conv_[i][j];
+        }
+
+        filter_out_[j] /= filter_order_;
+
+        for(size_t i = filter_order_-1; i > 0; i--) // делаем сдвиг свёртки
+        {
+            filter_conv_[i][j] = filter_conv_[i-1][j];
+        }
+
+    }
+
+    return filter_out_;
+}   
 
 
 }; // class

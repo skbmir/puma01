@@ -404,7 +404,7 @@
       
   <gazebo>
     <plugin name="joint_6_T_ft_sensor" filename="libgazebo_ros_ft_sensor.so">
-      <updateRate>80</updateRate>
+      <updateRate>50</updateRate>
       <topicName>/puma01_sim/ft_sensor</topicName> 
       <jointName>joint_6_T</jointName>
       <force_torque>

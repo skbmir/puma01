@@ -115,10 +115,10 @@ void puma01HWInterface::write(ros::Duration& elapsed_time)
 
 	for(std::size_t i=0; i<num_joints_; i++)
 	{
-		traj_cmd_.data[i] = joint_position_command_[i];
+		traj_cmd_.data[i] = joint_position_command_[i] + force_control_position_corr_[i];
 		traj_cmd_.data[i+num_joints_] = joint_velocity_command_[i];
 		traj_cmd_.data[i+traj_cmd_acc_offset_] = joint_acceleration_command_[i];
-		traj_cmd_.data[i+traj_cmd_acc_offset_+num_joints_] = joint_effort_command_[i];
+		// traj_cmd_.data[i+traj_cmd_acc_offset_+num_joints_] = joint_effort_command_[i];
 	}
 
 	sim_cmd_pub_.publish(traj_cmd_);
@@ -196,7 +196,9 @@ void puma01HWInterface::force_controller_ac_DoneCB(const actionlib::SimpleClient
 {
 	for(std::size_t i=0; i<num_joints_; i++)
 	{
-		joint_effort_command_[i] = result->output_torques.data[i];			
+		// joint_effort_command_[i] = result->output_torques.data[i];	
+		force_control_position_corr_[i] = result->output_torques.data[i];		
+		// joint_position_command_[i] -= result->output_torques.data[i];	
 	}		
 }
 

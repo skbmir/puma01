@@ -65,6 +65,8 @@ protected:
 
 	bool force_control_ac_connected_;
 
+	std::array<double,6> force_control_position_corr_;
+
 };  // class
 
 }  // namespace 
