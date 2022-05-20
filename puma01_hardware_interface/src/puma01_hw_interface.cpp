@@ -101,6 +101,7 @@ void puma01HWInterface::read(ros::Duration& elapsed_time)
 			for(std::size_t i=0; i<num_joints_; i++)
 			{
 				joint_effort_command_[i] = 0.0;			
+				force_control_position_corr_[i] = 0.0;
 			}	
 			force_control_ac_connected_ = false;
 			ROS_WARN("Force controller connection lost!");

@@ -70,16 +70,24 @@ include_directories(
 # add_dependencies(${PROJECT_NAME} ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 add_executable(force_controller src/force_controller.cpp)
-
 # set_target_properties(${PROJECT_NAME}_node PROPERTIES OUTPUT_NAME node PREFIX "")
-
 target_link_libraries(
   force_controller
   ${catkin_LIBRARIES}
 )
-
 add_dependencies(
   force_controller 
+  ${${PROJECT_NAME}_EXPORTED_TARGETS} 
+  ${catkin_EXPORTED_TARGETS}
+)
+
+add_executable(wrench_pub src/wrench_publisher.cpp)
+target_link_libraries(
+  wrench_pub
+  ${catkin_LIBRARIES}
+)
+add_dependencies(
+  wrench_pub 
   ${${PROJECT_NAME}_EXPORTED_TARGETS} 
   ${catkin_EXPORTED_TARGETS}
 )

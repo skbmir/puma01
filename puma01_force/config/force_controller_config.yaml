@@ -10,7 +10,7 @@ force_controller:
   force_y: 
     pid: {p: 0.0, i: 0.0, d: 0.0}
   force_z: 
-    pid: {p: 0.01, i: 0.01, d: 0.0, i_clamp_min: -500, i_clamp_max: 500}
+    pid: {p: 0.005, i: 0.02, d: 0.0, i_clamp_min: -500, i_clamp_max: 500}
 
 
     
