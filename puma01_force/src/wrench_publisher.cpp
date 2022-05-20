@@ -6,6 +6,15 @@
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 
 std::array<tf2::Transform,6> _local_transforms, _transforms;
+tf2::Vector3    tip_force_(0.0, 0.0, 0.0), goal_force_(1.0, 0.0, 0.0);
+
+void get2DGoal(const geometry_msgs::PoseStamped &goal_msg) 
+{
+    tf2::Quaternion goal_quat;
+    tf2::convert(goal_msg.pose.orientation, goal_quat);
+    tf2::Matrix3x3 goal_rotation(goal_quat);
+    tip_force_ = goal_rotation*goal_force_;
+}
 
 void getCurrentTFCB(const tf2_msgs::TFMessageConstPtr &tf_msg)
 {
@@ -43,8 +52,9 @@ int main(int argc, char** argv)
 
     ros::NodeHandle nh;
 
-    ros::Subscriber tf_sub;
-    tf_sub =  nh.subscribe("/tf",1,&getCurrentTFCB);
+    ros::Subscriber tf_sub, goal_sub;
+    tf_sub =  nh.subscribe("/tf", 1, &getCurrentTFCB);
+    goal_sub =  nh.subscribe("/goal", 1, &get2DGoal);
 
     for(size_t i= 0; i<6; i++) //MAGIC NUMBER!!!!!!!!!!!!!!!!!!!!!!!!!1
     {
@@ -52,7 +62,7 @@ int main(int argc, char** argv)
         _transforms[i].setIdentity();
     }
 
-    tf2::Vector3    tip_force(0.0, 0.0, -1.0), wrench_force(0.0, 0.0, 0.0);
+    tf2::Vector3    wrench_force(0.0, 0.0, 0.0);
     tf2::Transform  inv_transform;
 
     ros::Publisher wrench_pub;
@@ -71,12 +81,12 @@ int main(int argc, char** argv)
     wrench_msg.wrench.force.y = wrench_force[1];
     wrench_msg.wrench.force.z = wrench_force[2];
 
-    ros::Rate loop_rate(80);
+    ros::Rate loop_rate(50);
 
     while(ros::ok())
     {
         inv_transform = _transforms[5].inverse();
-        wrench_force = inv_transform.getBasis()*tip_force;
+        wrench_force = inv_transform.getBasis()*tip_force_;
 
         wrench_msg.wrench.force.x = wrench_force[0];
         wrench_msg.wrench.force.y = wrench_force[1];

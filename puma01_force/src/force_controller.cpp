@@ -52,7 +52,7 @@ private:
     boost::shared_ptr<ros::AsyncSpinner> ft_sensor_spinner_, tf_spinner_; // AsyncSpinners for /tf and "/wrench" subscribers
     ros::CallbackQueue tf_queue_, ft_sensor_queue_;
 
-    const uint8_t filter_order_ = 20;
+    const uint8_t filter_order_ = 50;
     std::vector<std::array<double,3>> filter_conv_; // filter input signal convolution
 
 
