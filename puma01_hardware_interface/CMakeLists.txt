@@ -20,6 +20,7 @@ find_package(catkin REQUIRED COMPONENTS
   actionlib_msgs 
   actionlib
   puma01_force
+  vscan_usbcan_api
 )
 
 catkin_package(
