@@ -35,6 +35,7 @@ include_directories(include ${catkin_INCLUDE_DIRS})
 
 add_library(${PROJECT_NAME} 
   src/computed_torque_controller.cpp
+  src/pd_plus_fw_controller.cpp
 )
 
 target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES})

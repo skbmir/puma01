@@ -1,13 +1,13 @@
 
-#include <puma01_hardware_interface/puma01_hw_interface.h>
+#include <puma01_hardware_interface/puma01_hwi.h>
 
 
 
-namespace puma01_hw_interface_ns
+namespace puma01_hwi_ns
 {
 puma01HWInterface::puma01HWInterface(ros::NodeHandle& nh, urdf::Model* urdf_model)
  	 : 	ros_control_boilerplate::GenericHWInterface(nh, urdf_model), 
-	  	name_("puma01_hw_interface"), 
+	  	name_("puma01_hardware_interface"), 
 		force_controller_ac_("force_controller", true),
 		force_control_ac_connected_(false)
 {
@@ -87,7 +87,7 @@ void puma01HWInterface::read(ros::Duration& elapsed_time)
 		force_controller_goal_.current_joint_angles.data = joint_position_; // actual joint positions
 		force_controller_goal_.desired_wrench = wrench_command_; // desired wrench
 
-		force_controller_ac_.sendGoal(force_controller_goal_, boost::bind(&puma01_hw_interface_ns::puma01HWInterface::force_controller_ac_DoneCB, this, _1, _2));
+		force_controller_ac_.sendGoal(force_controller_goal_, boost::bind(&puma01_hwi_ns::puma01HWInterface::force_controller_ac_DoneCB, this, _1, _2));
 
 	}else{
 		// wait force_controller action server to appear for 10 ms

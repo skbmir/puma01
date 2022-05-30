@@ -41,23 +41,36 @@ catkin_package(
 
 include_directories(include ${catkin_INCLUDE_DIRS})
 
-add_executable(puma01_hw_interface 
-  include/puma01_hardware_interface/puma01_hw_interface.h
-  src/puma01_hw_interface.cpp
-  src/puma01_hw_interface_main.cpp
+# puma01_hwi
+add_executable(puma01_hwi 
+  include/puma01_hardware_interface/puma01_hwi.h
+  src/puma01_hwi.cpp
+  src/puma01_hwi_main.cpp
 )
-add_dependencies(puma01_hw_interface ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-target_link_libraries(puma01_hw_interface
+add_dependencies(puma01_hwi ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+target_link_libraries(puma01_hwi
   ${catkin_LIBRARIES}
 )
 
-add_executable(puma01_hw_interface_test 
-  include/puma01_hardware_interface/puma01_hw_interface.h
-  src/puma01_hw_interface_test.cpp
-  src/puma01_hw_interface_main.cpp
+# puma01_hwi_test
+add_executable(puma01_hwi_test 
+  include/puma01_hardware_interface/puma01_hwi.h
+  src/puma01_hwi_test.cpp
+  src/puma01_hwi_main.cpp
 )
-add_dependencies(puma01_hw_interface_test ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-target_link_libraries(puma01_hw_interface_test
+add_dependencies(puma01_hwi_test ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+target_link_libraries(puma01_hwi_test
+  ${catkin_LIBRARIES}
+)
+
+# hwi_pd_plus_fw_test
+add_executable(hwi_pd_plus_fw_test 
+  include/puma01_hardware_interface/puma01_hwi.h
+  src/hwi_pd_plus_fw_test.cpp
+  src/puma01_hwi_main.cpp
+)
+add_dependencies(hwi_pd_plus_fw_test ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+target_link_libraries(hwi_pd_plus_fw_test
   ${catkin_LIBRARIES}
 )
 

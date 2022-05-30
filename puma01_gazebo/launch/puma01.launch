@@ -39,7 +39,8 @@
             -unpause"/>
 
       <!-- launching controllers -->
-      <include file="$(find puma01_control)/launch/puma01_controllers.launch"></include>  
+      <!-- <include file="$(find puma01_control)/launch/sim_computed_torque_controller.launch"></include>   -->
+      <include file="$(find puma01_control)/launch/sim_pd_plus_fw_controller.launch"></include>  
 
 </launch>
 

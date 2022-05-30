@@ -1,13 +1,13 @@
 
-#include <puma01_hardware_interface/puma01_hw_interface.h>
+#include <puma01_hardware_interface/puma01_hwi.h>
 
 
 
-namespace puma01_hw_interface_ns
+namespace puma01_hwi_ns
 {
 puma01HWInterface::puma01HWInterface(ros::NodeHandle& nh, urdf::Model* urdf_model)
  	 : 	ros_control_boilerplate::GenericHWInterface(nh, urdf_model), 
-	  	name_("puma01_hw_interface"), 
+	  	name_("puma01_hardware_interface"), 
 		force_controller_ac_("force_controller", true),
 		force_control_ac_connected_(false)
 {
@@ -217,11 +217,11 @@ void puma01HWInterface::initCAN()
 						DRV_STATE_ID | DRV_2_CODE | MOTOR_POT_ENC_CUR, 
 						DRV_STATE_ID | DRV_3_CODE | MOTOR_POT_ENC_CUR};
 
-	pos_cmd_vscan_msg_.Id = TRAJ_CMD_ID | DRV_123_CODE | MOTOR_POS;
+	pos_cmd_vscan_msg_.Id = TRAJ_CMD_ID | TO_ALL_CODE | MOTOR_POS;
     pos_cmd_vscan_msg_.Size = 6;
     pos_cmd_vscan_msg_.Flags = VSCAN_FLAGS_STANDARD;
 
-	vel_cmd_vscan_msg_.Id = TRAJ_CMD_ID | DRV_123_CODE | MOTOR_VEL;
+	vel_cmd_vscan_msg_.Id = TRAJ_CMD_ID | TO_ALL_CODE | MOTOR_VEL;
     vel_cmd_vscan_msg_.Size = 6;
     vel_cmd_vscan_msg_.Flags = VSCAN_FLAGS_STANDARD;
 

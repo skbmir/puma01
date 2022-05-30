@@ -17,7 +17,7 @@
 #include <vscan_usbcan_api/usbcan.h>
 #include <vscan_usbcan_api/puma_parameters.h>
 
-namespace puma01_hw_interface_ns
+namespace puma01_hwi_ns
 {
 
 typedef actionlib::SimpleActionClient<puma01_force::ForceControlAction> ForceControllerActionClient;
@@ -49,6 +49,8 @@ public:
 	void getNewPidCB(const control_msgs::JointControllerStateConstPtr& new_pids_msg);
 
 	void initCAN();
+
+	void forwardDynamics();
 
 protected:
 

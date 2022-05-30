@@ -6,4 +6,10 @@
     </description>
   </class>
 
+  <class name="puma01_controllers/PDplusFWController" type="puma01_controllers::PDplusFWController" base_class_type="controller_interface::ControllerBase">
+    <description>
+      The PDplusFWController inherits from JointGroupPositionController, and it tracks position commands. It expects a EffortJointInterface type of hardware interface.
+    </description>
+  </class>
+
 </library>

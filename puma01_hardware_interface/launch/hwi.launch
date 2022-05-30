@@ -4,11 +4,11 @@
  
   <!-- <param name="robot_description" textfile="$(find puma01_description)/urdf/puma01.urdf" />  -->
 
-  <rosparam file="$(find puma01_hardware_interface)/config/puma01_hw_interface_config.yaml" command="load"/>
+  <rosparam file="$(find puma01_hardware_interface)/config/hwi_config.yaml" command="load"/>
 
   <!-- <group ns="puma01"> -->
 
-    <node name="puma01_hw_interface_node" pkg="puma01_hardware_interface" type="puma01_hw_interface" output="screen"/> 
+    <node name="puma01_hwi_node" pkg="puma01_hardware_interface" type="puma01_hwi" output="screen"/> 
 
     <node name="controller_spawner" pkg="controller_manager" type="spawner" respawn="false"
     output="screen" args="posvelacc_trajectory_controller joint_state_controller --timeout 60"/>
