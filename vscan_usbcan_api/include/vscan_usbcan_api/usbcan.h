@@ -2,7 +2,7 @@
 #include <vector>
 #include <ros/ros.h>
 #include <vscan_usbcan_api/vs_can_api.h>
-#include <vscan_usbcan_api/can_frames.h>
+#include <vscan_usbcan_api/can_ids.h>
 
 namespace vscan_api
 {

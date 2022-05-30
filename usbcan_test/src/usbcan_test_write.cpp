@@ -156,7 +156,7 @@ int main(int argc, char **argv)
     read_buffer_.resize(read_buff_size_);
     // write_buffer_.resize(write_buff_size_);
 
-    cmd_frame_.Id = TRAJ_CMD_ID | DRV_123_CODE | MOTOR_POS;
+    cmd_frame_.Id = TRAJ_CMD_ID | TO_ALL_CODE | MOTOR_POS;
     cmd_frame_.Size = 6;
     cmd_frame_.Flags = VSCAN_FLAGS_STANDARD;
     usbcan_handle_.wrapMsgData(cmd_frame_,pos_cmd_1_, 0);

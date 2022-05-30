@@ -107,33 +107,30 @@ bool usbcan_handle::noError()
 
 void usbcan_handle::wrapMsgData(VSCAN_MSG &msg, int16_t val, size_t byte_offset)
 {
-    // msg.Data[byte_offset] = val>>24;
-    // msg.Data[byte_offset+1] = val>>16;
-    // msg.Data[byte_offset+2] = val>>8;
-    // msg.Data[byte_offset+3] = val;
-    msg.Data[byte_offset] =   val>>8;
+    msg.Data[byte_offset]   = val >> 8;
     msg.Data[byte_offset+1] = val;
-}
-
-void usbcan_handle::wrapMsgData(VSCAN_MSG &msg, float val, size_t byte_offset)
-{
-    // msg.Data[byte_offset] = val>>24;
-    // msg.Data[byte_offset+1] = val>>16;
-    // msg.Data[byte_offset+2] = val>>8;
-    // msg.Data[byte_offset+3] = val;
-    msg.Data[byte_offset]   = (int32_t)val >> 16;
-    msg.Data[byte_offset+1] = (int32_t)val & 0xffff;
 }
 
 int16_t usbcan_handle::getDatafromMsg(VSCAN_MSG &msg, size_t byte_offset)
 {
-    // return msg.Data[byte_offset]<<24 | msg.Data[byte_offset+1]<<16 | msg.Data[byte_offset+2]<<8 | msg.Data[byte_offset+3];
     return msg.Data[byte_offset]<<8 | msg.Data[byte_offset+1];
+}
+
+void usbcan_handle::wrapMsgData(VSCAN_MSG &msg, float val, size_t byte_offset)
+{
+    unsigned char * data_addr = (unsigned char *)&val; // float ptr --> uchar ptr
+    msg.Data[byte_offset] = *data_addr; 
+    msg.Data[byte_offset+1] = *++data_addr;
+    msg.Data[byte_offset+2] = *++data_addr;
+    msg.Data[byte_offset+3] = *++data_addr;
+    
 }
 
 float usbcan_handle::getFloatDatafromMsg(VSCAN_MSG &msg, size_t byte_offset)
 {
-    return (float)(((int32_t)msg.Data[byte_offset])<<24 | ((int32_t)msg.Data[byte_offset+1])<<16 | ((int32_t)msg.Data[byte_offset+2])<<8 | (int32_t)msg.Data[byte_offset+3]);
+    unsigned char data_field[] = {msg.Data[0], msg.Data[1], msg.Data[2], msg.Data[3]};
+    float val_out = *(float *)&data_field;
+    return val_out;
 }
 
 
