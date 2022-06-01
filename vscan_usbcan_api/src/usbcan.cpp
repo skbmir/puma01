@@ -10,8 +10,6 @@ usbcan_handle::usbcan_handle()
 
 usbcan_handle::~usbcan_handle()
 {
-    close();
-
     // need to check if device is ready, to close it???
     // if(isReady()) 
     // {
@@ -89,6 +87,64 @@ bool usbcan_handle::setSpeed(void * speed)
     }else{
         return false;
     }
+}
+
+
+bool usbcan_handle::getErrorFlag()
+{
+    vscan_status_ = VSCAN_Ioctl(vscan_handle_, VSCAN_IOCTL_GET_FLAGS, &vscan_flags_);
+    if(vscan_flags_!=0)
+    {
+        ROS_WARN("[USB-CAN adapter] Error flags: %lx",vscan_flags_);
+
+        if(vscan_flags_&VSCAN_IOCTL_FLAG_RX_FIFO_FULL != 0)
+        {
+            ROS_INFO("[USB-CAN adapter]     RX FIFO FULL: %li",vscan_flags_&VSCAN_IOCTL_FLAG_RX_FIFO_FULL);
+        }
+
+        if((vscan_flags_ >> 1)&(VSCAN_IOCTL_FLAG_TX_FIFO_FULL >> 1))
+        {
+            ROS_INFO("[USB-CAN adapter]     TX FIFO full: %li",(vscan_flags_ >> 1)&(VSCAN_IOCTL_FLAG_TX_FIFO_FULL >> 1));
+        }
+
+        if((vscan_flags_ >> 2)&(VSCAN_IOCTL_FLAG_ERR_WARNING >> 2) !=0)
+        {
+            ROS_INFO("[USB-CAN adapter]      ERR WARNING: %li",(vscan_flags_ >> 2)&(VSCAN_IOCTL_FLAG_ERR_WARNING >> 2));
+        }
+
+        if((vscan_flags_ >> 3)&(VSCAN_IOCTL_FLAG_DATA_OVERRUN >> 3) != 0)
+        {
+            ROS_INFO("[USB-CAN adapter]     DATA OVERRUN: %li",(vscan_flags_ >> 3)&(VSCAN_IOCTL_FLAG_DATA_OVERRUN >> 3));
+        }
+
+        if((vscan_flags_ >> 4)&(VSCAN_IOCTL_FLAG_UNUSED >> 4) != 0)
+        {
+            ROS_INFO("[USB-CAN adapter]           UNUSED: %li",(vscan_flags_ >> 4)&(VSCAN_IOCTL_FLAG_UNUSED >> 4));
+        }
+
+        if((vscan_flags_ >> 5)&(VSCAN_IOCTL_FLAG_ERR_PASSIVE >> 5) != 0)
+        {
+            ROS_INFO("[USB-CAN adapter]      ERR PASSIVE: %li",(vscan_flags_ >> 5)&(VSCAN_IOCTL_FLAG_ERR_PASSIVE >> 5));
+        }
+
+        if((vscan_flags_ >> 6)&(VSCAN_IOCTL_FLAG_ARBIT_LOST >> 6) != 0)
+        {
+            ROS_INFO("[USB-CAN adapter]       ARBIT LOST: %li",(vscan_flags_ >> 6)&(VSCAN_IOCTL_FLAG_ARBIT_LOST >> 6));
+        }
+
+        if((vscan_flags_ >> 7)&(VSCAN_IOCTL_FLAG_BUS_ERROR >> 7) != 0)
+        {
+            ROS_INFO("[USB-CAN adapter]        BUS ERROR: %li",(vscan_flags_ >> 7)&(VSCAN_IOCTL_FLAG_BUS_ERROR >> 7));
+        }
+
+        if((vscan_flags_ >> 16)&(VSCAN_IOCTL_FLAG_API_RX_FIFO_FULL >> 16) != 0)
+        {
+            ROS_INFO("[USB-CAN adapter] API RX FIFO FULL: %li",(vscan_flags_ >> 16)&(VSCAN_IOCTL_FLAG_API_RX_FIFO_FULL >> 16));
+        }
+
+        return false;
+    }
+    return true;
 }
 
 unsigned long usbcan_handle::getActualWriteNum(){ return actual_write_frame_number_;}

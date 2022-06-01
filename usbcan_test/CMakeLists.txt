@@ -43,6 +43,14 @@ target_link_libraries(three_dof_test
   ${catkin_LIBRARIES}
 )
 
+add_executable(send_err_test 
+  src/send_err_test.cpp
+)
+add_dependencies(send_err_test ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+target_link_libraries(send_err_test
+  ${catkin_LIBRARIES}
+)
+
 install(DIRECTORY include/${PROJECT_NAME}/
   DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
 )

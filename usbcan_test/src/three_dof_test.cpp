@@ -148,7 +148,7 @@ int main(int argc, char **argv)
     std::string n_name = "three_dof_test";
     std::string devname = "/dev/ttyUSB0";
     DWORD mode = VSCAN_MODE_NORMAL;
-    void * can_baudrate = VSCAN_SPEED_500K;
+    void * can_baudrate = VSCAN_SPEED_100K;
 
     // char tty[] = "/dev/ttyUSB0";
     char * tty;
@@ -232,6 +232,73 @@ int main(int argc, char **argv)
 
     if(usbcan_handle_.noError())
     {
+        new_gain = 1.1;
+        cfg_frame_.Id = DRV_CFG_ID | CFG_PID_P | DRV_1_CODE;
+        usbcan_handle_.wrapMsgData(cfg_frame_,new_gain);
+        usbcan_handle_.writeRequest(&cfg_frame_,1);
+        // ROS_INFO("<< WRITE: %03x, Data: %02x %02x %02x %02x %02x %02x %02x %02x", cfg_frame_.Id, cfg_frame_.Data[0], cfg_frame_.Data[1], cfg_frame_.Data[2], cfg_frame_.Data[3], cfg_frame_.Data[4], cfg_frame_.Data[5], cfg_frame_.Data[6], cfg_frame_.Data[7]);
+        // dura.sleep();
+
+        new_gain = 0.01;
+        cfg_frame_.Id = DRV_CFG_ID | CFG_PID_I | DRV_1_CODE;
+        usbcan_handle_.wrapMsgData(cfg_frame_,new_gain);
+        usbcan_handle_.writeRequest(&cfg_frame_,1);
+        // ROS_INFO("<< WRITE: %03x, Data: %02x %02x %02x %02x %02x %02x %02x %02x", cfg_frame_.Id, cfg_frame_.Data[0], cfg_frame_.Data[1], cfg_frame_.Data[2], cfg_frame_.Data[3], cfg_frame_.Data[4], cfg_frame_.Data[5], cfg_frame_.Data[6], cfg_frame_.Data[7]);
+        // dura.sleep();
+
+        new_gain = 0.8;
+        cfg_frame_.Id = DRV_CFG_ID | CFG_PID_D | DRV_1_CODE;
+        usbcan_handle_.wrapMsgData(cfg_frame_,new_gain);
+        usbcan_handle_.writeRequest(&cfg_frame_,1);
+        // ROS_INFO("<< WRITE: %03x, Data: %02x %02x %02x %02x %02x %02x %02x %02x", cfg_frame_.Id, cfg_frame_.Data[0], cfg_frame_.Data[1], cfg_frame_.Data[2], cfg_frame_.Data[3], cfg_frame_.Data[4], cfg_frame_.Data[5], cfg_frame_.Data[6], cfg_frame_.Data[7]);
+        // usbcan_handle_.Flush();
+
+        // usbcan_handle_.writeRequest(&emergency_frame_,1);
+
+        // usbcan_handle_.writeRequest(&normal_mode_frame_,1);
+
+        //  float test_float = usbcan_handle_.getFloatDatafromMsg(cfg_frame_);
+        // ROS_INFO("%f",test_float);
+    }
+
+    ros::Duration dura_while(0.005); //cmd_timer_dura_
+
+    start_time_ = ros::Time::now().toSec();
+    // ros::Time::init();
+
+    // ROS_INFO("Start time: %F",start_time_);
+    
+    double time_last_ = ros::Time::now().toSec();
+    double max_period = 0.0;
+    int16_t new_int = 0;
+    while (ros::ok())
+    {
+        // double time_now = ros::Time::now().toSec();
+        // double cycle_period = time_now - time_last_;
+        // time_last_ = time_now; 
+        // if(cycle_period > max_period)
+        // {
+        //     max_period = cycle_period;
+        //     ROS_INFO("period = %f",max_period);
+        // }
+
+        // new_int++;
+        // cfg_frame_.Id = DRV_CFG_ID | CFG_PID_D | DRV_2_CODE;
+        // usbcan_handle_.wrapMsgData(cfg_frame_,new_int);
+
+        // if(usbcan_handle_.writeRequest(&cfg_frame_,1))
+        // {
+        //     usbcan_handle_.Flush();
+        // }
+        // else
+        // {
+        //     ROS_ERROR("Failed to write!");
+        // }
+        // ROS_INFO("<< WRITE: %03x, Data: %02x %02x %02x %02x %02x %02x %02x %02x", cfg_frame_.Id, cfg_frame_.Data[0], cfg_frame_.Data[1], cfg_frame_.Data[2], cfg_frame_.Data[3], cfg_frame_.Data[4], cfg_frame_.Data[5], cfg_frame_.Data[6], cfg_frame_.Data[7]);
+
+        // new_gain = 1.1;
+        // cfg_frame_.Id = DRV_CFG_ID | CFG_PID_P | DRV_1_CODE;
+        // usbcan_handle_.wrapMsgData(cfg_frame_,new_gain);
         // usbcan_handle_.writeRequest(&cfg_frame_,1);
         // ROS_INFO("<< WRITE: %03x, Data: %02x %02x %02x %02x %02x %02x %02x %02x", cfg_frame_.Id, cfg_frame_.Data[0], cfg_frame_.Data[1], cfg_frame_.Data[2], cfg_frame_.Data[3], cfg_frame_.Data[4], cfg_frame_.Data[5], cfg_frame_.Data[6], cfg_frame_.Data[7]);
         // dura.sleep();
@@ -248,65 +315,28 @@ int main(int argc, char **argv)
         // usbcan_handle_.wrapMsgData(cfg_frame_,new_gain);
         // usbcan_handle_.writeRequest(&cfg_frame_,1);
         // ROS_INFO("<< WRITE: %03x, Data: %02x %02x %02x %02x %02x %02x %02x %02x", cfg_frame_.Id, cfg_frame_.Data[0], cfg_frame_.Data[1], cfg_frame_.Data[2], cfg_frame_.Data[3], cfg_frame_.Data[4], cfg_frame_.Data[5], cfg_frame_.Data[6], cfg_frame_.Data[7]);
-        // // usbcan_handle_.Flush();
+        // usbcan_handle_.Flush();
 
-        // usbcan_handle_.writeRequest(&emergency_frame_,1);
+        // dura_while.sleep();
+        usbcan_handle_.getErrorFlag();
 
-        usbcan_handle_.writeRequest(&normal_mode_frame_,1);
-
-         // float test_float = usbcan_handle_.getFloatDatafromMsg(cfg_frame_);
-        // ROS_INFO("%f",test_float);
-    }
-
-    ros::Duration dura_while(0.005); //cmd_timer_dura_
-
-    start_time_ = ros::Time::now().toSec();
-    // ros::Time::init();
-
-    // ROS_INFO("Start time: %F",start_time_);
-    
-    double time_last_ = ros::Time::now().toSec();
-    double max_period = 0.0;
-    int16_t new_int = 0;
-    while (ros::ok())
-    {
-        double time_now = ros::Time::now().toSec();
-        double cycle_period = time_now - time_last_;
-        time_last_ = time_now; 
-        if(cycle_period > max_period)
-        {
-            max_period = cycle_period;
-            ROS_INFO("period = %f",max_period);
-        }
-
-        new_int++;
-        cfg_frame_.Id = DRV_CFG_ID | CFG_PID_D | DRV_2_CODE;
-        usbcan_handle_.wrapMsgData(cfg_frame_,new_int);
-
-        if(usbcan_handle_.writeRequest(&cfg_frame_,1))
-        {
-            usbcan_handle_.Flush();
-        }
-        
-        // ROS_INFO("<< WRITE: %03x, Data: %02x %02x %02x %02x %02x %02x %02x %02x", cfg_frame_.Id, cfg_frame_.Data[0], cfg_frame_.Data[1], cfg_frame_.Data[2], cfg_frame_.Data[3], cfg_frame_.Data[4], cfg_frame_.Data[5], cfg_frame_.Data[6], cfg_frame_.Data[7]);
-        
-    
+            
         // loop();
         // ros::spinOnce();
         // dura_while.sleep();
     }
 
-    // if(usbcan_handle_.writeRequest(&calibration_frame_,1)) // write request
-    // {       
-    //     if(usbcan_handle_.Flush()) // if write request SUCCESS --> it means, that write frames, stored in write buffer, were successfully wrote to CAN
-    //     {
+    if(usbcan_handle_.writeRequest(&calibration_frame_,1)) // write request
+    {       
+        if(usbcan_handle_.Flush()) // if write request SUCCESS --> it means, that write frames, stored in write buffer, were successfully wrote to CAN
+        {
 
-    //     }
-    // }
+        }
+    }
 
-    dura.sleep();
+    sleep(0.5);
+
     usbcan_handle_.close();
-
 
     return 0;
 }
