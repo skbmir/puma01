@@ -97,6 +97,8 @@ protected:
 
 	std::vector<VSCAN_MSG> read_buffer_;
 	int read_buff_size_;
+	
+	double start_time_ = 0;
 
 };  // class
 

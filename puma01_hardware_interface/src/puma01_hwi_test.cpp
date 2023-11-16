@@ -11,11 +11,8 @@ puma01HWInterface::puma01HWInterface(ros::NodeHandle& nh, urdf::Model* urdf_mode
 		force_controller_ac_("force_controller", true),
 		force_control_ac_connected_(false)
 {
-	// for simulation
-	sim_joint_states_sub_ = nh.subscribe("/puma01_sim/joint_states",1,&puma01HWInterface::SimJointStatesCB,this);
-	wrench_command_sub_ = nh.subscribe("/puma01/wrench_command",1,&puma01HWInterface::wrench_command_CB,this);
+
 	new_pid_sub_ = nh.subscribe("/puma01/new_pids",1,&puma01HWInterface::getNewPidCB,this);
-	sim_cmd_pub_ = nh.advertise<std_msgs::Float64MultiArray>("/puma01_sim/sim_computed_torque_controller/command",1);
 
 	init();
 }
@@ -50,14 +47,6 @@ void puma01HWInterface::init()
 
 	initJointInterfaces(); // call it after num_joints_ has been defined!
 
-	wrench_command_.force.x = 0.0;
-	wrench_command_.force.y = 0.0;
-	wrench_command_.force.z = 0.0;
-	wrench_command_.torque.x = 0.0;
-	wrench_command_.torque.y = 0.0;
-	wrench_command_.torque.z = 0.0;
-
-	force_control_position_corr_.fill(0.0);
 
 	p_gains_.fill(0.0);
 	i_gains_.fill(0.0);
@@ -66,32 +55,6 @@ void puma01HWInterface::init()
 	int_pos_cmds_.fill(0.0);
 	int_vel_cmds_.fill(0.0);
 
-	double as_wait_timeout = 5.0;
-
-	ROS_INFO_NAMED(name_, "Waiting for force controller action server to be started in %d secs...",(int)as_wait_timeout);
-	force_controller_ac_.waitForServer(ros::Duration(as_wait_timeout)); // waiting for force controller action server to start
-	if(force_controller_ac_.isServerConnected())
-	{
-		ROS_INFO_NAMED(name_, "Connection with force controller established.");
-		force_control_ac_connected_ = true;
-	}else{
-		ROS_ERROR_NAMED(name_, "No force_controller with action interface found! Ignoring.");
-	}
-
-}
-
-void puma01HWInterface::wrench_command_CB(const geometry_msgs::Wrench& wrench)
-{ 
-	// define Goal for force controller
-	wrench_command_.torque.x = wrench.torque.x;
-	wrench_command_.torque.y = wrench.torque.y;
-	wrench_command_.torque.z = wrench.torque.z;
-	wrench_command_.force.x = wrench.force.x;
-	wrench_command_.force.y = wrench.force.y;
-	wrench_command_.force.z = wrench.force.z;
-
-	// ROS_INFO_NAMED(name_, "Got new wrench command: fz = %4.4f",wrench_command_.force.z);
-	
 }
 
 void puma01HWInterface::read(ros::Duration& elapsed_time)
@@ -113,11 +76,11 @@ void puma01HWInterface::read(ros::Duration& elapsed_time)
 					// case DRV_STATE_ID | DRV_1_CODE | MOTOR_POT_ENC_CUR:
 					// 	break;
 
-					case DRV_STATE_ID | DRV_2_CODE | MOTOR_POT_ENC_CUR:
+					case DRV_STATE_ID | DRV_2_CODE | MOTOR_POS_VEL:
 						joint_n = 1;
 						break;
 
-					case DRV_STATE_ID | DRV_3_CODE | MOTOR_POT_ENC_CUR:
+					case DRV_STATE_ID | DRV_3_CODE | MOTOR_POS_VEL:
 						joint_n = 2;
 						break;			
 
@@ -160,7 +123,7 @@ void puma01HWInterface::write(ros::Duration& elapsed_time)
 			if(int_vel_cmds_[i] != int_traj_cmds_[i+num_joints_])
 			{
 				int_vel_cmds_[i] = int_traj_cmds_[i+num_joints_];
-				// usbcan_handle_.wrapMsgData(vel_cmd_vscan_msg_, int_vel_cmds_[i], i*2);
+				usbcan_handle_.wrapMsgData(vel_cmd_vscan_msg_, int_vel_cmds_[i], i*2);
 				new_cmd_arrived = true;
 			}
 
@@ -177,21 +140,18 @@ void puma01HWInterface::write(ros::Duration& elapsed_time)
 
 	}
 
-	if(new_cmd_arrived)
-	{
-		if(usbcan_handle_.writeRequest(&pos_cmd_vscan_msg_,1))
-		{
-			usbcan_handle_.Flush();
-		}
-		// usbcan_handle_.writeRequest(&vel_cmd_vscan_msg_,1);
-		ROS_INFO("Write new command to CAN: joint_2: pos_cmd = %i		joint_3: pos_cmd = %i",int_pos_cmds_[1],int_pos_cmds_[2]);
-		new_cmd_arrived = false;
-	}
+	// if(new_cmd_arrived)
+	// {
+	usbcan_handle_.writeRequest(&pos_cmd_vscan_msg_,1);
+	// usbcan_handle_.writeRequest(&vel_cmd_vscan_msg_,1);
 
-	if(usbcan_handle_.writeRequest(&heartbeat_frame_,1))
-	{
-		usbcan_handle_.Flush();
-	}
+	ROS_INFO("Write new command to CAN: joint_1: pos_cmd = %i	joint_2: pos_cmd = %i	joint_3: pos_cmd = %i",int_pos_cmds_[0], int_pos_cmds_[1],int_pos_cmds_[2]);
+	// new_cmd_arrived = false;
+	// }
+
+	usbcan_handle_.writeRequest(&heartbeat_frame_,1); 
+
+	usbcan_handle_.Flush();
 
 }
 
@@ -213,15 +173,15 @@ void puma01HWInterface::initCAN()
 							MOTOR_2_ENC_TO_JOINT_CONST, 
 							MOTOR_3_ENC_TO_JOINT_CONST};
 
-	drv_feedback_ids_ ={DRV_STATE_ID | DRV_1_CODE | MOTOR_POT_ENC_CUR, 
-						DRV_STATE_ID | DRV_2_CODE | MOTOR_POT_ENC_CUR, 
-						DRV_STATE_ID | DRV_3_CODE | MOTOR_POT_ENC_CUR};
+	drv_feedback_ids_ ={DRV_STATE_ID | DRV_1_CODE | MOTOR_POS_VEL, 
+						DRV_STATE_ID | DRV_2_CODE | MOTOR_POS_VEL, 
+						DRV_STATE_ID | DRV_3_CODE | MOTOR_POS_VEL};
 
-	pos_cmd_vscan_msg_.Id = TRAJ_CMD_ID | TO_ALL_CODE | MOTOR_POS;
+	pos_cmd_vscan_msg_.Id = DRV_CMD_ID | TO_ALL_CODE | MOTOR_POS;
     pos_cmd_vscan_msg_.Size = 6;
     pos_cmd_vscan_msg_.Flags = VSCAN_FLAGS_STANDARD;
 
-	vel_cmd_vscan_msg_.Id = TRAJ_CMD_ID | TO_ALL_CODE | MOTOR_VEL;
+	vel_cmd_vscan_msg_.Id = DRV_CMD_ID | TO_ALL_CODE | MOTOR_VEL;
     vel_cmd_vscan_msg_.Size = 6;
     vel_cmd_vscan_msg_.Flags = VSCAN_FLAGS_STANDARD;
 
@@ -330,11 +290,6 @@ void puma01HWInterface::getNewPidCB(const control_msgs::JointControllerStateCons
 
 			usbcan_handle_.wrapMsgData(new_pid_p_vscan_msgs_[joint_n],p_gains_[joint_n]);
 
-			if(usbcan_handle_.writeRequest(&new_pid_p_vscan_msgs_[joint_n],1))
-			{
-				usbcan_handle_.Flush();
-			}
-		
 			ROS_INFO("Got new P-gain for joint_%i",joint_n+1);
 			ROS_INFO("Write config CAN-frame with ID: %03x, Data: %02x %02x %02x %02x %02x %02x %02x %02x", new_pid_p_vscan_msgs_[joint_n].Id, new_pid_p_vscan_msgs_[joint_n].Data[0], new_pid_p_vscan_msgs_[joint_n].Data[1], new_pid_p_vscan_msgs_[joint_n].Data[2], new_pid_p_vscan_msgs_[joint_n].Data[3], new_pid_p_vscan_msgs_[joint_n].Data[4], new_pid_p_vscan_msgs_[joint_n].Data[5], new_pid_p_vscan_msgs_[joint_n].Data[6], new_pid_p_vscan_msgs_[joint_n].Data[7]);
 		}
@@ -347,11 +302,6 @@ void puma01HWInterface::getNewPidCB(const control_msgs::JointControllerStateCons
 
 			usbcan_handle_.writeRequest(&new_pid_i_vscan_msgs_[joint_n],1);
 
-			if(usbcan_handle_.writeRequest(&new_pid_i_vscan_msgs_[joint_n],1))
-			{
-				usbcan_handle_.Flush();
-			}
-
 			ROS_INFO("Got new I-gain for joint_%i",joint_n+1);
 			ROS_INFO("Write config CAN-frame with ID: %03x, Data: %02x %02x %02x %02x %02x %02x %02x %02x", new_pid_i_vscan_msgs_[joint_n].Id, new_pid_i_vscan_msgs_[joint_n].Data[0], new_pid_i_vscan_msgs_[joint_n].Data[1], new_pid_i_vscan_msgs_[joint_n].Data[2], new_pid_i_vscan_msgs_[joint_n].Data[3], new_pid_i_vscan_msgs_[joint_n].Data[4], new_pid_i_vscan_msgs_[joint_n].Data[5], new_pid_i_vscan_msgs_[joint_n].Data[6], new_pid_i_vscan_msgs_[joint_n].Data[7]);
 		}
@@ -363,11 +313,6 @@ void puma01HWInterface::getNewPidCB(const control_msgs::JointControllerStateCons
 			usbcan_handle_.wrapMsgData(new_pid_d_vscan_msgs_[joint_n],d_gains_[joint_n]);
 
 			usbcan_handle_.writeRequest(&new_pid_d_vscan_msgs_[joint_n],1);
-
-			if(usbcan_handle_.writeRequest(&new_pid_d_vscan_msgs_[joint_n],1))
-			{
-				usbcan_handle_.Flush();
-			}
 
 			ROS_INFO("Got new D-gain for joint_%i",joint_n+1);
 			ROS_INFO("Write config CAN-frame with ID: %03x, Data: %02x %02x %02x %02x %02x %02x %02x %02x", new_pid_d_vscan_msgs_[joint_n].Id, new_pid_d_vscan_msgs_[joint_n].Data[0], new_pid_d_vscan_msgs_[joint_n].Data[1], new_pid_d_vscan_msgs_[joint_n].Data[2], new_pid_d_vscan_msgs_[joint_n].Data[3], new_pid_d_vscan_msgs_[joint_n].Data[4], new_pid_d_vscan_msgs_[joint_n].Data[5], new_pid_d_vscan_msgs_[joint_n].Data[6], new_pid_d_vscan_msgs_[joint_n].Data[7]);

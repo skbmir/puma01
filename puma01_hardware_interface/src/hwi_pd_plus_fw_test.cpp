@@ -23,6 +23,8 @@ void puma01HWInterface::init()
 
 	initJointInterfaces(); // call it after num_joints_ has been defined!
 
+	start_time_ = ros::Time::now().toSec();
+
 }
 
 void puma01HWInterface::wrench_command_CB(const geometry_msgs::Wrench& wrench)
@@ -37,20 +39,44 @@ void puma01HWInterface::read(ros::Duration& elapsed_time)
 
 void puma01HWInterface::write(ros::Duration& elapsed_time)
 {
+	
 	// Safety !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 	// enforceLimits(elapsed_time);	
 
+	double current_time = ros::Time::now().toSec();
+
+	// traj_cmd_.data[0] = (MATH_PI_/3)*sin(0.2*(current_time - start_time_));
+    // traj_cmd_.data[1] = (MATH_PI_/4)*sin(0.4*(current_time - start_time_));
+    // traj_cmd_.data[2] = (MATH_PI_/5)*sin(0.7*(current_time - start_time_));
+
+	// traj_cmd_.data[0+num_joints_]= (MATH_PI_/3)*cos(0.2*(current_time - start_time_));
+	// traj_cmd_.data[1+num_joints_]= (MATH_PI_/4)*cos(0.4*(current_time - start_time_));
+	// traj_cmd_.data[2+num_joints_]= (MATH_PI_/5)*cos(0.7*(current_time - start_time_));
+
+	// traj_cmd_.data[0+traj_cmd_acc_offset_]= -(MATH_PI_/3)*sin(0.2*(current_time - start_time_));
+	// traj_cmd_.data[1+traj_cmd_acc_offset_]= -(MATH_PI_/4)*sin(0.4*(current_time - start_time_));
+	// traj_cmd_.data[2+traj_cmd_acc_offset_]= -(MATH_PI_/5)*sin(0.7*(current_time - start_time_));
+
 	forwardDynamics(); // calculate joint_effort_command_, dynamic compensation torques
 
+	bool new_cmd_arrived = true;
 	for(std::size_t i=0; i<num_joints_; i++)
 	{
-		traj_cmd_.data[i] = joint_position_command_[i];
-		traj_cmd_.data[i+num_joints_] = joint_velocity_command_[i];
-		// traj_cmd_.data[i+traj_cmd_acc_offset_] = joint_acceleration_command_[i];
-		traj_cmd_.data[i+traj_cmd_acc_offset_+num_joints_] = joint_effort_command_[i];
+		if(traj_cmd_.data[i] != joint_position_command_[i])
+		{
+			traj_cmd_.data[i] = joint_position_command_[i];
+			traj_cmd_.data[i+num_joints_] = joint_velocity_command_[i];
+			traj_cmd_.data[i+traj_cmd_acc_offset_] = joint_acceleration_command_[i];
+			traj_cmd_.data[i+traj_cmd_acc_offset_+num_joints_] = joint_effort_command_[i];
+			new_cmd_arrived = true;
+		}
 	}
 
-	sim_cmd_pub_.publish(traj_cmd_);
+	if(new_cmd_arrived )
+	{
+		sim_cmd_pub_.publish(traj_cmd_);
+		new_cmd_arrived = false;
+	}
 
 }
 
@@ -124,19 +150,19 @@ void puma01HWInterface::SimJointStatesCB(const sensor_msgs::JointState::ConstPtr
 // calculate forward dynamics for desired trajectory ON TIME
 void puma01HWInterface::forwardDynamics()
 {
-	double 	s2 = sin(joint_position_command_[1]), //sin(q2)
-			s2_2 = sin(2*joint_position_command_[1]), //sin(2*q2)
-			c2_2 = cos(2*joint_position_command_[1]), //cos(2*q2)
-			c2 = cos(joint_position_command_[1]), //cos(q2)
-			s3 = sin(joint_position_command_[2]), //sin(q3)
-			c3 = cos(joint_position_command_[2]), //cos(q3)
-			s23 = sin(joint_position_command_[1] + joint_position_command_[2]), //sin(q2 + q3)
-			c23 = cos(joint_position_command_[1] + joint_position_command_[2]), //cos(q2 + q3)
-			s23_23 = sin(2*(joint_position_command_[1] + joint_position_command_[2])),  //sin(2*q2 + 2*q3)
-			c23_2 = cos(2*joint_position_command_[1] + joint_position_command_[2]), //cos(2*q2 + q3)
-			s23_2 = sin(2*joint_position_command_[1] + joint_position_command_[2]), //sin(2*q2 + q3)
-			c23_23 = cos(2*(joint_position_command_[1] + joint_position_command_[2])),  //cos(2*q2 + 2*q3)
-			c2_2c = cos(2*joint_position_command_[1] + 0.017444);
+	double 	s2 = sin(traj_cmd_.data[1]), //sin(q2)
+			s2_2 = sin(2*traj_cmd_.data[1]), //sin(2*q2)
+			c2_2 = cos(2*traj_cmd_.data[1]), //cos(2*q2)
+			c2 = cos(traj_cmd_.data[1]), //cos(q2)
+			s3 = sin(traj_cmd_.data[2]), //sin(q3)
+			c3 = cos(traj_cmd_.data[2]), //cos(q3)
+			s23 = sin(traj_cmd_.data[1] + traj_cmd_.data[2]), //sin(q2 + q3)
+			c23 = cos(traj_cmd_.data[1] + traj_cmd_.data[2]), //cos(q2 + q3)
+			s23_23 = sin(2*(traj_cmd_.data[1] + traj_cmd_.data[2])),  //sin(2*q2 + 2*q3)
+			c23_2 = cos(2*traj_cmd_.data[1] + traj_cmd_.data[2]), //cos(2*q2 + q3)
+			s23_2 = sin(2*traj_cmd_.data[1] + traj_cmd_.data[2]), //sin(2*q2 + q3)
+			c23_23 = cos(2*(traj_cmd_.data[1] + traj_cmd_.data[2])),  //cos(2*q2 + 2*q3)
+			c2_2c = cos(2*traj_cmd_.data[1] + 0.017444);
 
 	std::array<double, 3>	G_vector = {0, 0, 0},  // MAGIC number! compute only for 3 first joints!
 							C_vector = {0, 0, 0},
@@ -154,18 +180,18 @@ void puma01HWInterface::forwardDynamics()
 
     M_matrix[8] = 0.33112; //M33
 
-    M_ddq_vector[0] = M_matrix[0]*joint_acceleration_command_[0] + M_matrix[1]*joint_acceleration_command_[1] + M_matrix[2]*joint_acceleration_command_[2];
-	M_ddq_vector[1] = M_matrix[1]*joint_acceleration_command_[0] + M_matrix[4]*joint_acceleration_command_[1] + M_matrix[5]*joint_acceleration_command_[2];
-	M_ddq_vector[2] = M_matrix[2]*joint_acceleration_command_[0] + M_matrix[5]*joint_acceleration_command_[1] + M_matrix[8]*joint_acceleration_command_[2]; 
+    M_ddq_vector[0] = M_matrix[0]*traj_cmd_.data[0+traj_cmd_acc_offset_] + M_matrix[1]*traj_cmd_.data[1+traj_cmd_acc_offset_] + M_matrix[2]*traj_cmd_.data[2+traj_cmd_acc_offset_];
+	M_ddq_vector[1] = M_matrix[1]*traj_cmd_.data[0+traj_cmd_acc_offset_] + M_matrix[4]*traj_cmd_.data[1+traj_cmd_acc_offset_] + M_matrix[5]*traj_cmd_.data[2+traj_cmd_acc_offset_];
+	M_ddq_vector[2] = M_matrix[2]*traj_cmd_.data[0+traj_cmd_acc_offset_] + M_matrix[5]*traj_cmd_.data[1+traj_cmd_acc_offset_] + M_matrix[8]*traj_cmd_.data[2+traj_cmd_acc_offset_]; 
 
 // gravity vector G 
     G_vector[1] = - 8.48712*s23 - 1.02416*c2 - 37.2347*s2;
     G_vector[2] = - 8.48712*s23;
 
 // centrifugal and coriolis forces vector C
-    C_vector[0] = 0.61451*joint_velocity_command_[1]*joint_velocity_command_[1]*s2 + 0.12418*joint_velocity_command_[1]*joint_velocity_command_[1]*s23 + 0.12418*joint_velocity_command_[2]*joint_velocity_command_[2]*s23 + 0.021135*joint_velocity_command_[1]*joint_velocity_command_[1]*c2 - 0.37357*joint_velocity_command_[0]*joint_velocity_command_[2]*s2 - 0.052884*joint_velocity_command_[0]*joint_velocity_command_[1]*s23_23 - 0.052884*joint_velocity_command_[0]*joint_velocity_command_[2]*s23_23 + 0.74714*joint_velocity_command_[0]*joint_velocity_command_[1]*s23_2 + 0.37357*joint_velocity_command_[0]*joint_velocity_command_[2]*s23_2 + 0.014198*joint_velocity_command_[0]*joint_velocity_command_[1]*c2_2 + 0.81386*joint_velocity_command_[0]*joint_velocity_command_[1]*s2_2 + 0.24837*joint_velocity_command_[1]*joint_velocity_command_[2]*s23;
-    C_vector[1] = 0.026442*joint_velocity_command_[0]*joint_velocity_command_[0]*s23_23 - 0.37357*joint_velocity_command_[2]*joint_velocity_command_[2]*s2 - 0.37357*joint_velocity_command_[0]*joint_velocity_command_[0]*s23_2 - 0.0070992*joint_velocity_command_[0]*joint_velocity_command_[0]*c2_2 - 0.40693*joint_velocity_command_[0]*joint_velocity_command_[0]*s2_2 - 0.74714*joint_velocity_command_[1]*joint_velocity_command_[2]*s2;
-    C_vector[2] = 0.18679*joint_velocity_command_[0]*joint_velocity_command_[0]*s2 + 0.37357*joint_velocity_command_[1]*joint_velocity_command_[1]*s2 + 0.026442*joint_velocity_command_[0]*joint_velocity_command_[0]*s23_23 - 0.18679*joint_velocity_command_[0]*joint_velocity_command_[0]*s23_2;
+    C_vector[0] = 0.61451*traj_cmd_.data[1+num_joints_]*traj_cmd_.data[1+num_joints_]*s2 + 0.12418*traj_cmd_.data[1+num_joints_]*traj_cmd_.data[1+num_joints_]*s23 + 0.12418*traj_cmd_.data[2+num_joints_]*traj_cmd_.data[2+num_joints_]*s23 + 0.021135*traj_cmd_.data[1+num_joints_]*traj_cmd_.data[1+num_joints_]*c2 - 0.37357*traj_cmd_.data[0+num_joints_]*traj_cmd_.data[2+num_joints_]*s2 - 0.052884*traj_cmd_.data[0+num_joints_]*traj_cmd_.data[1+num_joints_]*s23_23 - 0.052884*traj_cmd_.data[0+num_joints_]*traj_cmd_.data[2+num_joints_]*s23_23 + 0.74714*traj_cmd_.data[0+num_joints_]*traj_cmd_.data[1+num_joints_]*s23_2 + 0.37357*traj_cmd_.data[0+num_joints_]*traj_cmd_.data[2+num_joints_]*s23_2 + 0.014198*traj_cmd_.data[0+num_joints_]*traj_cmd_.data[1+num_joints_]*c2_2 + 0.81386*traj_cmd_.data[0+num_joints_]*traj_cmd_.data[1+num_joints_]*s2_2 + 0.24837*traj_cmd_.data[1+num_joints_]*traj_cmd_.data[2+num_joints_]*s23;
+    C_vector[1] = 0.026442*traj_cmd_.data[0+num_joints_]*traj_cmd_.data[0+num_joints_]*s23_23 - 0.37357*traj_cmd_.data[2+num_joints_]*traj_cmd_.data[2+num_joints_]*s2 - 0.37357*traj_cmd_.data[0+num_joints_]*traj_cmd_.data[0+num_joints_]*s23_2 - 0.0070992*traj_cmd_.data[0+num_joints_]*traj_cmd_.data[0+num_joints_]*c2_2 - 0.40693*traj_cmd_.data[0+num_joints_]*traj_cmd_.data[0+num_joints_]*s2_2 - 0.74714*traj_cmd_.data[1+num_joints_]*traj_cmd_.data[2+num_joints_]*s2;
+    C_vector[2] = 0.18679*traj_cmd_.data[0+num_joints_]*traj_cmd_.data[0+num_joints_]*s2 + 0.37357*traj_cmd_.data[1+num_joints_]*traj_cmd_.data[1+num_joints_]*s2 + 0.026442*traj_cmd_.data[0+num_joints_]*traj_cmd_.data[0+num_joints_]*s23_23 - 0.18679*traj_cmd_.data[0+num_joints_]*traj_cmd_.data[0+num_joints_]*s23_2;
 
 	for(size_t i=0; i<3; i++)
 	{

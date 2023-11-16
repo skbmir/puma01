@@ -25,7 +25,7 @@ int16_t pos_cmd_1_ = 0, pos_cmd_2_ = 0, pos_cmd_3_ = 0,
 
 VSCAN_MSG cmd_frame_, heartbeat_frame_;
 
-uint32_t feedback_1_id_ = DRV_STATE_ID | DRV_1_CODE | MOTOR_POT_ENC_CUR, feedback_2_id_ = DRV_STATE_ID | DRV_2_CODE | MOTOR_POT_ENC_CUR, feedback_3_id_ = DRV_STATE_ID | DRV_3_CODE | MOTOR_POT_ENC_CUR;
+uint32_t feedback_1_id_ = DRV_STATE_ID | DRV_1_CODE | MOTOR_POS_VEL, feedback_2_id_ = DRV_STATE_ID | DRV_2_CODE | MOTOR_POS_VEL, feedback_3_id_ = DRV_STATE_ID | DRV_3_CODE | MOTOR_POS_VEL;
 
 
 void loop()
@@ -156,7 +156,7 @@ int main(int argc, char **argv)
     read_buffer_.resize(read_buff_size_);
     // write_buffer_.resize(write_buff_size_);
 
-    cmd_frame_.Id = TRAJ_CMD_ID | TO_ALL_CODE | MOTOR_POS;
+    cmd_frame_.Id = DRV_CMD_ID | TO_ALL_CODE | MOTOR_POS;
     cmd_frame_.Size = 6;
     cmd_frame_.Flags = VSCAN_FLAGS_STANDARD;
     usbcan_handle_.wrapMsgData(cmd_frame_,pos_cmd_1_, 0);

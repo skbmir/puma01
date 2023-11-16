@@ -35,7 +35,9 @@ int16_t pos_cmd_1_ = 0, pos_cmd_2_ = 0, pos_cmd_3_ = 0,
 
 VSCAN_MSG cmd_frame_, heartbeat_frame_, calibration_frame_, cfg_frame_, emergency_frame_, normal_mode_frame_;
 
-uint32_t feedback_1_id_ = DRV_STATE_ID | DRV_1_CODE | MOTOR_POT_ENC_CUR, feedback_2_id_ = DRV_STATE_ID | DRV_2_CODE | MOTOR_POT_ENC_CUR, feedback_3_id_ = DRV_STATE_ID | DRV_3_CODE | MOTOR_POT_ENC_CUR;
+uint32_t    feedback_1_id_ = DRV_STATE_ID | DRV_1_CODE | MOTOR_POS_VEL, 
+            feedback_2_id_ = DRV_STATE_ID | DRV_2_CODE | MOTOR_POS_VEL, 
+            feedback_3_id_ = DRV_STATE_ID | DRV_3_CODE | MOTOR_POS_VEL;
 
 void cmdTimerCB(const ros::TimerEvent& event)
 {
@@ -187,7 +189,7 @@ int main(int argc, char **argv)
     cfg_frame_.Flags = VSCAN_FLAGS_STANDARD;
     usbcan_handle_.wrapMsgData(cfg_frame_,new_gain);
 
-    cmd_frame_.Id = TRAJ_CMD_ID | TO_ALL_CODE | MOTOR_POS;
+    cmd_frame_.Id = DRV_CMD_ID | TO_ALL_CODE | MOTOR_POS;
     cmd_frame_.Size = 6;
     cmd_frame_.Flags = VSCAN_FLAGS_STANDARD;
     usbcan_handle_.wrapMsgData(cmd_frame_,pos_cmd_1_, 0);
@@ -232,21 +234,21 @@ int main(int argc, char **argv)
 
     if(usbcan_handle_.noError())
     {
-        new_gain = 1.1;
+        new_gain = 3.1;
         cfg_frame_.Id = DRV_CFG_ID | CFG_PID_P | DRV_1_CODE;
         usbcan_handle_.wrapMsgData(cfg_frame_,new_gain);
         usbcan_handle_.writeRequest(&cfg_frame_,1);
         // ROS_INFO("<< WRITE: %03x, Data: %02x %02x %02x %02x %02x %02x %02x %02x", cfg_frame_.Id, cfg_frame_.Data[0], cfg_frame_.Data[1], cfg_frame_.Data[2], cfg_frame_.Data[3], cfg_frame_.Data[4], cfg_frame_.Data[5], cfg_frame_.Data[6], cfg_frame_.Data[7]);
         // dura.sleep();
 
-        new_gain = 0.01;
+        new_gain = 0.5;
         cfg_frame_.Id = DRV_CFG_ID | CFG_PID_I | DRV_1_CODE;
         usbcan_handle_.wrapMsgData(cfg_frame_,new_gain);
         usbcan_handle_.writeRequest(&cfg_frame_,1);
         // ROS_INFO("<< WRITE: %03x, Data: %02x %02x %02x %02x %02x %02x %02x %02x", cfg_frame_.Id, cfg_frame_.Data[0], cfg_frame_.Data[1], cfg_frame_.Data[2], cfg_frame_.Data[3], cfg_frame_.Data[4], cfg_frame_.Data[5], cfg_frame_.Data[6], cfg_frame_.Data[7]);
         // dura.sleep();
 
-        new_gain = 0.8;
+        new_gain = 0.4;
         cfg_frame_.Id = DRV_CFG_ID | CFG_PID_D | DRV_1_CODE;
         usbcan_handle_.wrapMsgData(cfg_frame_,new_gain);
         usbcan_handle_.writeRequest(&cfg_frame_,1);

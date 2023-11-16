@@ -6,7 +6,7 @@ int main(int argc, char **argv)
     std::string n_name = "usbcan_test";
     std::string devname = "/dev/ttyUSB0";
     DWORD mode = VSCAN_MODE_NORMAL;
-    auto can_baudrate = VSCAN_SPEED_500K;
+    auto can_baudrate = VSCAN_SPEED_100K;
 
     // char tty[] = "/dev/ttyUSB0";
     char * tty;
@@ -115,24 +115,22 @@ int main(int argc, char **argv)
             if(usbcan_handle.readRequest(test_read_buffer.data(),test_read_buffer.size()))
             {
                 // if read request SUCCESS --> frames, read from CAN, store in read buffer
-                if(usbcan_handle.getActualReadNum()>0)
+                for(size_t i = 0; i > usbcan_handle.getActualReadNum(); i++)
                 {
-                    // ROS_INFO_STREAM("Read " << usbcan_handle.getActualReadNum() << " CAN-frames.");
-                    for(VSCAN_MSG read_msg : test_read_buffer)
+                    if(test_read_buffer[i].Id== DRV_STATE_ID | DRV_1_CODE | MOTOR_POS_VEL)
                     {
-                        // ROS_INFO("Got CAN-frame with ID: %03x, Data: %02x %02x %02x %02x %02x %02x %02x %02x", read_msg.Id, read_msg.Data[0], read_msg.Data[1], read_msg.Data[2], read_msg.Data[3], read_msg.Data[4], read_msg.Data[5], read_msg.Data[6], read_msg.Data[7]);
-                        if(read_msg.Id==0x004)
-                        {
-                            pot = usbcan_handle.getDatafromMsg(read_msg);
-                            enc = usbcan_handle.getDatafromMsg(read_msg,4);
-                            motor_pos_msg.data[0] = pot;
-                            motor_pos_msg.data[1] = enc;
-                            // ROS_INFO("enc: %i, pot: %i", enc, pot);
-                            pos_pub.publish(motor_pos_msg);
-                        }
+                        // ROS_INFO("Got CAN-frame with ID: %03x, Data: %02x %02x %02x %02x %02x %02x %02x %02x", test_read_buffer[i].Id, test_read_buffer[i].Data[0], test_read_buffer[i].Data[1], test_read_buffer[i].Data[2], test_read_buffer[i].Data[3], test_read_buffer[i].Data[4], test_read_buffer[i].Data[5], test_read_buffer[i].Data[6], test_read_buffer[i].Data[7]);
+                        pot = usbcan_handle.getDatafromMsg(test_read_buffer[i]);
+                        enc = usbcan_handle.getDatafromMsg(test_read_buffer[i],2);
+                        motor_pos_msg.data[0] = pot;
+                        motor_pos_msg.data[1] = enc;
+                        // ROS_INFO("enc: %i, pot: %i", enc, pot);
+                        pos_pub.publish(motor_pos_msg);
                     }
                 }
             }
+
+            usbcan_handle.getErrorFlag();
 
 
         }else{
